@@ -61,8 +61,12 @@ exports.getMessage = function (message, isAck) {
       sendData.push(JSON.stringify(message.parsedData))
     } else if (message.topic === C.TOPIC.PRESENCE) {
       if (message.action === C.ACTIONS.QUERY) {
-        if (message.parsedData.length !== 0) {
-          sendData.push(message.parsedData.join(SEP))
+        if (message.parsedData instanceof Array) {
+          if (message.parsedData.length > 0) {
+            sendData.push(message.parsedData.join(SEP))
+          }
+        } else {
+          sendData.push(JSON.stringify(message.parsedData))
         }
       }
     } else {
