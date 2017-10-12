@@ -17,7 +17,7 @@ const BUILDERS = {
     [CA.ERROR.BYTE]: (msg, event) => ``,
     [CA.CHALLENGE.BYTE]: msg => ``,
     [CA.CHALLENGE_RESPONSE.BYTE]: msg => ``,
-    [CA.ACK.BYTE]: msg => ``,
+    [CA.ACCEPT.BYTE]: msg => ``,
     [CA.REJECTION.BYTE]: msg => ``,
     [CA.PING.BYTE]: msg => ``,
     [CA.PONG.BYTE]: msg => ``
@@ -80,70 +80,8 @@ const BUILDERS = {
  *
  * @returns {String} deepstream message string
  */
-export const getMessage = function (message, isAck) {
-  // let sendData
-  // if (message.isAck || isAck) {
-  //   sendData = [message.topic, C.ACTIONS.ACK]
-  // } else {
-  //   sendData = [message.topic]
-  // }
-  // if (message.event) {
-  //   sendData.push(message.data)
-  // }
-  // if (message.message) {
-  //   sendData.push(message.message)
-  // }
-  // if (message.action) {
-  //   sendData.push(message.action)
-  // }
-  // if (message.name) {
-  //   sendData.push(message.name)
-  // }
-  // if (typeof message.version !== 'undefined' && message.version !== null) {
-  //   sendData.push(message.version)
-  // }
-  // if (typeof message.path !== 'undefined' && message.path !== null) {
-  //   sendData.push(message.path)
-  // }
-  // if (message.subscription) {
-  //   sendData.push(message.subscription)
-  // }
-  // if (message.correlationId) {
-  //   sendData.push(message.correlationId)
-  // }
-
-  // if (message.action === C.ACTIONS.WRITE_ACKNOWLEDGEMENT) {
-  //   sendData.push(JSON.stringify(message.data[0]))
-  //   sendData.push(exports.typed(message.data[1]))
-  // } else if (message.data) {
-  //   sendData.push(message.data)
-  // } else if (message.parsedData !== undefined) {
-  //   if (
-  //     message.action === C.ACTIONS.READ ||
-  //     message.action === C.ACTIONS.UPDATE
-  //   ) {
-  //     sendData.push(JSON.stringify(message.parsedData))
-  //   } else if (message.topic === C.TOPIC.PRESENCE) {
-  //     if (message.action === C.ACTIONS.QUERY) {
-  //       if (message.parsedData instanceof Array) {
-  //         if (message.parsedData.length > 0) {
-  //           sendData.push(message.parsedData.join(SEP))
-  //         }
-  //       } else {
-  //         sendData.push(JSON.stringify(message.parsedData))
-  //       }
-  //     }
-  //   } else {
-  //     sendData.push(exports.typed(message.parsedData))
-  //   }
-  // }
-
-  // // only occurs on merge conflicts
-  // if (message.isWriteAck) {
-  //   sendData.push(writeConfig)
-  // }
-
-  // return sendData.join(SEP) + C.MESSAGE_SEPERATOR
+export const getMessage = (message, isAck):string => {
+  return ''
 }
 
 /**
@@ -151,38 +89,7 @@ export const getMessage = function (message, isAck) {
  * arguments
  */
 export const getErrorMessage = function (message, event, errorMessage) {
-  // let sendData = [message.topic, C.ACTIONS.ERROR, event]
-  // if (event === C.EVENT.RECORD_NOT_FOUND) {
-  //   sendData = [message.topic, C.ACTIONS.ERROR, message.action, message.name, event]
-  // } else if (event === C.EVENT.NO_RPC_PROVIDER || event === C.EVENT.RESPONSE_TIMEOUT) {
-  //   sendData = [message.topic, C.ACTIONS.ERROR, event, message.name, message.correlationId]
-  // } else if (
-  //   event === C.EVENT.MESSAGE_DENIED &&
-  //   message.topic === C.TOPIC.RPC &&
-  //   message.action === C.ACTIONS.REQUEST
-  // ) {
-  //   sendData = [message.topic, ACTIONS.ERROR, event, message.name, message.correlationId]
-  // } else if (!errorMessage) {
-  //   if (message.name) {
-  //     sendData.push(message.name)
-  //   }
-  //   if (message.action) {
-  //     sendData.push(message.action)
-  //   }
-  //   if (message.name) {
-  //     sendData.push(message.name)
-  //   }
-  //   if (message.correlationId) {
-  //     sendData.push(message.correlationId)
-  //   }
-  //   if (message.data) {
-  //     sendData.push(message.data)
-  //   }
-  // } else {
-  //   sendData.push(errorMessage)
-  // }
-
-  // return sendData.join(SEP) + MESSAGE_SEPERATOR
+  return ''
 }
 
 /**

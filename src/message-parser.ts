@@ -48,7 +48,7 @@ export const parse = (rawMessage) => {
     const parts = rawMessages[i].split(MESSAGE_PART_SEPERATOR)
 
     const topic = TOPIC_TEXT_TO_BYTE[parts[0]]
-    if (!topic) {
+    if (topic === undefined) {
       console.log('unknown topic', rawMessages[i])
       // invalid topic
       continue
@@ -82,46 +82,37 @@ export const parse = (rawMessage) => {
     }
 
     const A = ACTIONS_TEXT_TO_BYTE[topic]
-    let action = A[parts[index++]]
+    const rawAction = parts[index++]
+    let action = A[rawAction]
 
-    if (!action) {
-      if (!isError || topic !== TOPIC.RPC.BYTE) {
-        console.log('unknown action', parts[index - 1], rawMessages[i])
-        // invalid action
-        continue
-      } else {
+    if (action === undefined) {
+      if (topic === TOPIC.AUTH.BYTE && (isError || isAck)) {
+        // ignore
+      } else if (topic === TOPIC.CONNECTION.BYTE && isAck) {
+        // ignore
+      } else if (isError && topic === TOPIC.RPC.BYTE) {
         isError = false
         action = PA.REQUEST_ERROR.BYTE
+      } else if (isError && topic === TOPIC.RECORD.BYTE) {
+        // ignore
+      } else {
+        console.log('unknown action', parts[index - 1], rawMessages[i])
+        continue
       }
     }
 
-    //   let index = 2
-    //   const message = {
-    //     isAck: false,
-    //     isError: false,
-    //     topic: parts[0],
-    //     action: parts[1],
-    //     name: null,
-    //     data: [],
-    //     dataEncoding: C.ENCODING_TYPES.DEEPSTREAM,
-    //     raw: null,
-
-    //     // rpc / presence query
-    //     correlationId: null,
-
-    //     // subscription by listening
-    //     subscription: null,
-
-    //     // record
-    //     path: null,
-    //     version: null,
-    //     parsedData: null,
-    //     isWriteAck: null
-    //   }
-
     if (topic === TOPIC.RECORD.BYTE) {
       name = parts[index++]
-      if (
+      if (isError) {
+        isError = false
+        if (rawAction === 'VERSION_EXISTS') {
+          action = RA.VERSION_EXISTS.BYTE
+        } else if (rawAction === 'CACHE_RETRIEVAL_TIMEOUT') {
+          action = RA.CACHE_RETRIEVAL_TIMEOUT.BYTE
+        } else if (rawAction === 'STORAGE_RETRIEVAL_TIMEOUT') {
+          action = RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE
+        }
+      } else if (
         action === RA.SUBSCRIBECREATEANDREAD.BYTE ||
         action === RA.CREATEANDUPDATE.BYTE ||
         action === RA.UPDATE.BYTE ||
@@ -132,39 +123,53 @@ export const parse = (rawMessage) => {
           action === RA.PATCH.BYTE ||
           action === RA.CREATEANDUPDATE.BYTE
         ) {
+          isWriteAck = false
           version = parts[index++] * 1
         }
+        if (parts[parts.length - 1] === writeConfig) {
+          parts.pop()
+          isWriteAck = true
+        }
         if (
-          (action === RA.CREATEANDUPDATE.BYTE &&
-            (parts.length - index === 2)) ||
+          (action === RA.CREATEANDUPDATE.BYTE && (parts.length - index === 1)) ||
           action === RA.UPDATE.BYTE
         ) {
           dataEncoding = PAYLOAD_ENCODING.JSON
         }
-        if (
-          action === RA.PATCH.BYTE ||
-          (
-            action === RA.CREATEANDUPDATE.BYTE &&
-            parts.length - index > 2
-          )
+        else if (
+          (action === RA.CREATEANDUPDATE.BYTE && parts.length - index > 1) ||
+          action === RA.PATCH.BYTE
         ) {
+          if (action === RA.CREATEANDUPDATE.BYTE && parts.length - index > 1) {
+            action = RA.CREATEANDPATCH.BYTE
+          }
           dataEncoding = PAYLOAD_ENCODING.DEEPSTREAM
           path = parts[index++]
         }
         if (parts.length - index === 2) {
-          isWriteAck = parts[parts.length - 1] === writeConfig
           data = parts[parts.length - 2]
         } else {
           data = parts[index++]
+        }
+      } else if (
+        action === RA.LISTEN_ACCEPT.BYTE ||
+        action === RA.LISTEN_REJECT.BYTE ||
+        action === RA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE ||
+        action === RA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE
+      ) {
+        subscription = parts[index++]
+      } else if (action === RA.SUBSCRIPTION_HAS_PROVIDER.BYTE) {
+        if (parts[index++] === 'F') {
+          action = RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE
         }
       }
     } else if (topic === TOPIC.EVENT.BYTE) {
       name = parts[index++]
       if (
-        action === EA.LISTEN ||
-        action === EA.UNLISTEN ||
-        action === EA.LISTEN_ACCEPT ||
-        action === EA.LISTEN_REJECT
+        action === EA.LISTEN_ACCEPT.BYTE ||
+        action === EA.LISTEN_REJECT.BYTE ||
+        action === EA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE ||
+        action === EA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE
       ) {
         subscription = parts[index++]
       }
@@ -184,15 +189,62 @@ export const parse = (rawMessage) => {
       if (action === PA.RESPONSE.BYTE || action === PA.REQUEST.BYTE) {
         data = parts[index++]
       }
-    } else if (topic === TOPIC.PRESENCE.BYTE) {
-      name = action
-      correlationId = parts[index++]
-      data = parts[index++]
+    }
+    /************************
+    ***  Presence
+    *************************/
+    else if (topic === TOPIC.PRESENCE.BYTE) {
+      if (action === UA.QUERY.BYTE) {
+        correlationId = parts[index++]
+      }
+      if (isAck || action === UA.QUERY || action === UA.PRESENCE_JOIN.BYTE || action === UA.PRESENCE_LEAVE.BYTE) {
+        name = parts[index++]
+      } else {
+        name = action
+      }
+      if (!isAck && (action === UA.QUERY.BYTE || action === UA.SUBSCRIBE.BYTE || action === UA.UNSUBSCRIBE.BYTE)) {
+        data = parts[index++]
+      }
+      /************************
+      ***  Connection
+      *************************/
     } else if (topic === TOPIC.CONNECTION.BYTE) {
-      //     message.data = parts[index++]
+      if (isAck) {
+        action = CA.ACCEPT.BYTE
+        isAck = false
+      }
+      else if (action === CA.CHALLENGE_RESPONSE.BYTE || action === CA.REDIRECT.BYTE || action === CA.REJECTION.BYTE) {
+        data = parts[index++]
+        dataEncoding = PAYLOAD_ENCODING.JSON
+      }
+      /************************
+      ***  Authentication
+      *************************/
     } else if (topic === TOPIC.AUTH.BYTE) {
-      //     message.dataEncoding = C.ENCODING_TYPES.JSON
-      //     message.data = parts[index++]
+      if (isAck) {
+        action = AA.AUTH_SUCCESFUL.BYTE
+      } else if (isError) {
+        if (rawAction === 'INVALID_AUTH_DATA') {
+          isError = false
+          action = AA.INVALID_AUTH_DATA.BYTE
+        } else if (rawAction === 'TOO_MANY_AUTH_ATTEMPTS') {
+          isError = false
+          action = AA.TOO_MANY_AUTH_ATTEMPTS.BYTE
+        }
+      }
+
+      if (action === AA.AUTH_SUCCESFUL.BYTE) {
+        isAck = false
+        data = rawAction
+        dataEncoding = PAYLOAD_ENCODING.JSON
+      }
+      else if (
+        action === AA.REQUEST.BYTE ||
+        action === AA.INVALID_AUTH_DATA.BYTE
+      ) {
+        data = parts[index++]
+        dataEncoding = PAYLOAD_ENCODING.JSON
+      }
     }
 
     parsedMessages.push(JSON.parse(JSON.stringify({
@@ -208,13 +260,13 @@ export const parse = (rawMessage) => {
       correlationId,
 
       // subscription by listening
-      // subscription: null,
+      subscription,
 
       // record
-      // path: null,
+      path,
       version,
       // parsedData: null,
-      // isWriteAck: null
+      isWriteAck
     })))
   }
   return parsedMessages
