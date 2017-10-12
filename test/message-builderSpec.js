@@ -1,8 +1,8 @@
-// /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 // 'use strict'
 
-// const C = require('../../src/constants/constants')
-// const _msg = require('../test-helper/test-helper').msg
+// const C = require('../src/constants/constants')
+// const _msg = require('../utils').msg
+
 // const messageBuilder = require('../../src/message/message-builder')
 
 // describe('messageBuilder composes valid deepstream messages', () => {
