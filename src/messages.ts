@@ -10,6 +10,7 @@ import {
   MESSAGE_SEPERATOR,
   DEEPSTREAM_TYPES as TYPES,
   PAYLOAD_ENCODING,
+  TOPIC_BYTE_TO_TEXT as TBT,
   TOPIC_TEXT_TO_BYTE,
   ACTIONS_TEXT_TO_BYTE
 } from './constants'
@@ -20,215 +21,354 @@ function _ (message) {
     .replace(/\+/g, String.fromCharCode(30))
 }
 
-export const CONNECTION_MESSAGES = {
-  PING: {
+function m (data) {
+  Object.assign({
+    isAck: false,
+    isError: false
+  }, data.message)
+  Object.assign({
     buildText: true,
-    parseText: true,
+    parseText: true
+  }, data)
+  return data
+}
+
+function extendWithGenericMessages (topic, actions, messages) {
+  Object.assign(messages, {
+    ERROR: m({
+      text: _(`${TBT[topic]}|E|RANDOM_ERROR+`),
+      message: {
+        isAck: false,
+        isError: true,
+        topic: topic,
+        action: UA.ERROR.BYTE,
+        data: 'RANDOM_ERROR'
+      }
+    }),
+    MESSAGE_PERMISSION_ERROR: m({
+      text: _(`${TBT[topic]}|E|MESSAGE_PERMISSION_ERROR|username+`),
+      message: {
+        isAck: false,
+        isError: true,
+        topic: topic,
+        action: UA.MESSAGE_PERMISSION_ERROR.BYTE,
+        name: 'username'
+      }
+    }),
+    MESSAGE_DENIED: m({
+      text: _(`${TBT[topic]}|E|MESSAGE_DENIED|username+`),
+      message: {
+        isAck: false,
+        isError: true,
+        topic: topic,
+        action: UA.MESSAGE_DENIED.BYTE,
+        name: 'username'
+      }
+    }),
+    INVALID_MESSAGE_DATA: m({
+      text: _(`${TBT[topic]}|E|INVALID_MESSAGE_DATA|username|[invalid+`),
+      message: {
+        isAck: false,
+        isError: true,
+        topic: topic,
+        action: UA.INVALID_MESSAGE_DATA.BYTE,
+        name: 'username',
+        data: '[invalid'
+      }
+    }),
+    MULTIPLE_SUBSCRIPTIONS: m({
+      text: _(`${TBT[topic]}|E|MULTIPLE_SUBSCRIPTIONS|username+`),
+      message: {
+        isAck: false,
+        isError: true,
+        topic: topic,
+        action: UA.MULTIPLE_SUBSCRIPTIONS.BYTE,
+        name: 'username'
+      }
+    }),
+    NOT_SUBSCRIBED: m({
+      text: _(`${TBT[topic]}|E|NOT_SUBSCRIBED|username+`),
+      message: {
+        isAck: false,
+        isError: true,
+        topic: topic,
+        action: UA.NOT_SUBSCRIBED.BYTE,
+        name: 'username'
+      }
+    })
+  })
+}
+
+function extendWithSubscriptionMessages (topic, actions, messages) {
+    Object.assign(messages, {
+  SUBSCRIBE: m({
+    text: _(`${TBT[topic]}|S|subscription+`),
+    message: {
+      topic,
+      action: actions.SUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  }),
+  SUBSCRIBE_ACK: m({
+    text: _(`${TBT[topic]}|A|S|subscription+`),
+    message: {
+      isAck: true,
+      topic,
+      action: actions.SUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  }),
+  UNSUBSCRIBE: m({
+    text: _(`${TBT[topic]}|US|subscription+`),
+    message: {
+      topic,
+      action: actions.UNSUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  }),
+  UNSUBSCRIBE_ACK: m({
+    text: _(`${TBT[topic]}|A|US|subscription+`),
+    message: {
+      isAck: true,
+      topic,
+      action: actions.UNSUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  })
+})
+}
+
+function extendWithListenMessages (topic, actions, messages) {
+  Object.assign(messages, {
+    LISTEN: m({
+    text: _(`${TBT[topic]}|L|.*+`),
+    message: {
+      topic: TOPIC.RECORD.BYTE,
+      action: actions.LISTEN.BYTE,
+      name: '.*'
+    }
+  }),
+  LISTEN_ACK: m({
+    text: _(`${TBT[topic]}|A|L|.*+`),
+    message: {
+      isAck: true,
+      topic,
+      action: actions.LISTEN.BYTE,
+      name: '.*'
+    }
+  }),
+  UNLISTEN: m({
+    text: _(`${TBT[topic]}|UL|.*+`),
+    message: {
+      topic,
+      action: actions.UNLISTEN.BYTE,
+      name: '.*'
+    }
+  }),
+  UNLISTEN_ACK: m({
+    text: _(`${TBT[topic]}|A|UL|.*+`),
+    message: {
+      isAck: true,
+      topic,
+      action: actions.UNLISTEN.BYTE,
+      name: '.*'
+    }
+  }),
+  SUBSCRIPTION_FOR_PATTERN_FOUND: m({
+    text: _(`${TBT[topic]}|SP|.*|someSubscription+`),
+    message: {
+      topic,
+      action: actions.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE,
+      name: '.*',
+      subscription: 'someSubscription'
+    }
+  }),
+  SUBSCRIPTION_FOR_PATTERN_REMOVED: m({
+    text: _(`${TBT[topic]}|SR|.*|someSubscription+`),
+    message: {
+      topic,
+      action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+      name: '.*',
+      subscription: 'someSubscription'
+    }
+  }),
+  LISTEN_ACCEPT: m({
+    text: _(`${TBT[topic]}|SR|.*|someSubscription+`),
+    message: {
+      topic,
+      action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+      name: '.*',
+      subscription: 'someSubscription'
+    }
+  }),
+    LISTEN_REJECT: m({
+    text: _(`${TBT[topic]}|SR|.*|someSubscription+`),
+    message: {
+      topic,
+      action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+      name: '.*',
+      subscription: 'someSubscription'
+    }
+  })
+  })
+}
+
+export const PARSER_MESSAGES = {
+  ERROR: {},
+  UNKNOWN_TOPIC: {},
+  UNKNOWN_ACTION: {},
+  INVALID_MESSAGE: {},
+  MESSAGE_PARSE_ERROR: {},
+  MAXIMUM_MESSAGE_SIZE_EXCEEDED: {}
+}
+
+export const CONNECTION_MESSAGES = {
+  ERROR: m({
     text: _('C|PI+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PING.BYTE
     }
-  },
-  PONG: {
-    buildText: true,
-    parseText: true,
+  }),
+  PING: m({
+    text: _('C|PI+'),
+    message: {
+      topic: TOPIC.CONNECTION.BYTE,
+      action: CA.PING.BYTE
+    }
+  }),
+  PONG: m({
     text: _('C|PO+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PONG.BYTE
     }
-  },
-  CHALLENGE: {
-    buildText: true,
-    parseText: true,
+  }),
+  CHALLENGE: m({
     text: _('C|CH+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CHALLENGE.BYTE
     }
-  },
-  CHALLENGE_RESPONSE: {
-    buildText: true,
-    parseText: true,
+  }),
+  CHALLENGE_RESPONSE: m({
     text: _('C|CHR|url+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CHALLENGE_RESPONSE.BYTE,
       data: 'url',
       dataEncoding: PAYLOAD_ENCODING.JSON
     }
-  },
-  ACCEPT: {
-    buildText: true,
-    parseText: true,
+  }),
+  ACCEPT: m({
     text: _('C|A+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.ACCEPT.BYTE
     }
-  },
-  REJECTION: {
-    buildText: true,
-    parseText: true,
+  }),
+  REJECTION: m({
     text: _('C|REJ|reason+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.REJECTION.BYTE,
       data: 'reason',
       dataEncoding: PAYLOAD_ENCODING.JSON
     }
-  },
-  REDIRECT: {
-    buildText: true,
-    parseText: true,
+  }),
+  REDIRECT: m({
     text: _('C|RED|url+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.REDIRECT.BYTE,
       data: 'url',
       dataEncoding: PAYLOAD_ENCODING.JSON
     }
-  },
+  }),
+  CONNECTION_AUTHENTICATION_TIMEOUT: {
+
+  }
 }
 
 export const AUTH_MESSAGES = {
-  REQUEST: {
-    buildText: true,
-    parseText: true,
+  REQUEST: m({
     text: _('A|REQ|loginData+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.AUTH.BYTE,
       action: AA.REQUEST.BYTE,
       data: 'loginData',
       dataEncoding: PAYLOAD_ENCODING.JSON
     }
-  },
-  AUTH_SUCCESFUL: {
-    buildText: true,
-    parseText: true,
+  }),
+  AUTH_SUCCESSFUL: m({
     text: _('A|A|clientData+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.AUTH.BYTE,
-      action: AA.AUTH_SUCCESFUL.BYTE,
+      action: AA.AUTH_SUCCESSFUL.BYTE,
       data: 'clientData',
       dataEncoding: PAYLOAD_ENCODING.JSON
     }
-  },
-  INVALID_AUTH_DATA: {
-    buildText: true,
-    parseText: true,
+  }),
+  AUTH_UNSUCCESSFUL: m({
     text: _('A|E|INVALID_AUTH_DATA|errorMessage+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.AUTH.BYTE,
-      action: AA.INVALID_AUTH_DATA.BYTE,
+      action: AA.AUTH_UNSUCCESSFUL.BYTE,
       data: 'errorMessage',
       dataEncoding: PAYLOAD_ENCODING.JSON
     }
-  },
-  TOO_MANY_AUTH_ATTEMPTS: {
-    buildText: true,
-    parseText: true,
+  }),
+  TOO_MANY_AUTH_ATTEMPTS: m({
     text: _('A|E|TOO_MANY_AUTH_ATTEMPTS+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.AUTH.BYTE,
       action: AA.TOO_MANY_AUTH_ATTEMPTS.BYTE
     }
-  },
+  }),
 }
-
-// SUBSCRIBEANDREAD
-// SUBSCRIBEANDREAD_RESPONSE
-// SUBSCRIBEANDHEAD
-// SUBSCRIBEANDHEAD_RESPONSE
-
-// WRITE_ACKNOWLEDGEMENT
-// VERSION_EXISTS
-// CACHE_RETRIEVAL_TIMEOUT
-// STORAGE_RETRIEVAL_TIMEOUT
-// ERROR
+extendWithGenericMessages(TOPIC.AUTH.BYTE, AA, AUTH_MESSAGES)
 
 export const RECORD_MESSAGES = {
-  HEAD: {
-    buildText: true,
-    parseText: true,
+  HEAD: m({
     text: _('R|HD|user/someId+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.HEAD.BYTE,
       name: 'user/someId'
     }
-  },
-  HEAD_RESPONSE: {
-    buildText: true,
+  }),
+  HEAD_RESPONSE: m({
     parseText: false,
     text: _('R|HD|user/someId|12+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.HEAD_RESPONSE.BYTE,
       name: 'user/someId',
       data: '12'
     }
-  },
-  READ: {
-    buildText: true,
-    parseText: true,
+  }),
+  READ: m({
     text: _('R|R|user/someId+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.READ.BYTE,
       name: 'user/someId'
     }
-  },
-  READ_RESPONSE: {
-    buildText: true,
+  }),
+  READ_RESPONSE: m({
     parseText: false,
     text: _('R|R|user/someId|1|{"firstname":"Wolfram"}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.READ_RESPONSE.BYTE,
       name: 'user/someId',
       data: '{"firstname":"Wolfram"}',
       version: 1
     }
-  },
-  UPDATE: {
-    buildText: true,
-    parseText: true,
+  }),
+  UPDATE: m({
     text: _('R|U|user/someId|1|{"firstname":"Wolfram"}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.UPDATE.BYTE,
       dataEncoding: PAYLOAD_ENCODING.JSON,
@@ -237,14 +377,10 @@ export const RECORD_MESSAGES = {
       data: '{"firstname":"Wolfram"}',
       isWriteAck: false
     }
-  },
-  UPDATE_WITH_WRITE_ACK: {
-    buildText: true,
-    parseText: true,
+  }),
+  UPDATE_WITH_WRITE_ACK: m({
     text: _('R|U|user/someId|1|{"firstname":"Wolfram"}|{"writeSuccess":true}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.UPDATE.BYTE,
       dataEncoding: PAYLOAD_ENCODING.JSON,
@@ -253,14 +389,10 @@ export const RECORD_MESSAGES = {
       data: '{"firstname":"Wolfram"}',
       isWriteAck: true
     }
-  },
-  PATCH: {
-    buildText: true,
-    parseText: true,
+  }),
+  PATCH: m({
     text: _('R|P|user/someId|1|path|Sdata+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.PATCH.BYTE,
       dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
@@ -270,14 +402,10 @@ export const RECORD_MESSAGES = {
       data: 'Sdata',
       isWriteAck: false
     }
-  },
-  PATCH_WITH_WRITE_ACK: {
-    buildText: true,
-    parseText: true,
+  }),
+  PATCH_WITH_WRITE_ACK: m({
     text: _('R|P|user/someId|1|path|Sdata|{"writeSuccess":true}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.PATCH.BYTE,
       dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
@@ -287,14 +415,11 @@ export const RECORD_MESSAGES = {
       data: 'Sdata',
       isWriteAck: true
     }
-  },
-  ERASE: {
-    buildText: true,
+  }),
+  ERASE: m({
     parseText: false,
     text: _('R|P|user/someId|1|path|U+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.ERASE.BYTE,
       dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
@@ -303,14 +428,11 @@ export const RECORD_MESSAGES = {
       version: 1,
       isWriteAck: false
     }
-  },
-  ERASE_WITH_WRITE_ACK: {
-    buildText: true,
+  }),
+  ERASE_WITH_WRITE_ACK: m({
     parseText: false,
-    text: _('R|P|user/someId|1|path|U{_}{"writeSuccess":true}+'),
+    text: _('R|P|user/someId|1|path|U|{"writeSuccess":true}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.ERASE.BYTE,
       dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
@@ -319,14 +441,10 @@ export const RECORD_MESSAGES = {
       version: 1,
       isWriteAck: true
     }
-  },
-  CREATEANDUPDATE:{
-    buildText: true,
-    parseText: true,
+  }),
+  CREATEANDUPDATE:m({
     text: _('R|CU|user/someId|1|{"name":"bob"}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDUPDATE.BYTE,
       dataEncoding: PAYLOAD_ENCODING.JSON,
@@ -335,14 +453,10 @@ export const RECORD_MESSAGES = {
       data: '{"name":"bob"}',
       isWriteAck: false
     }    
-  },
-  CREATEANDUPDATE_WITH_WRITE_ACK:{
-    buildText: true,
-    parseText: true,
+  }),
+  CREATEANDUPDATE_WITH_WRITE_ACK:m({
     text: _('R|CU|user/someId|1|{"name":"bob"}|{"writeSuccess":true}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDUPDATE.BYTE,
       dataEncoding: PAYLOAD_ENCODING.JSON,
@@ -351,14 +465,10 @@ export const RECORD_MESSAGES = {
       data: '{"name":"bob"}',
       isWriteAck: true
     }    
-  },
-  CREATEANDPATCH:{
-    buildText: true,
-    parseText: true,
+  }),
+  CREATEANDPATCH:m({
     text: _('R|CU|user/someId|1|path|Sdata+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDPATCH.BYTE,
       dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
@@ -368,14 +478,10 @@ export const RECORD_MESSAGES = {
       data: 'Sdata',
       isWriteAck: false
     }    
-  },
-  CREATEANDPATCH_WITH_WRITE_ACK:{
-    buildText: true,
-    parseText: true,
+  }),
+  CREATEANDPATCH_WITH_WRITE_ACK:m({
     text: _('R|CU|user/someId|1|path|Sdata|{"writeSuccess":true}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDPATCH.BYTE,
       dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
@@ -385,619 +491,396 @@ export const RECORD_MESSAGES = {
       data: 'Sdata',
       isWriteAck: true
     }    
-  },
-  DELETE : {
-    buildText: true,
-    parseText: true,
+  }),
+  DELETE : m({
     text: _('R|D|user/someId+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.DELETE.BYTE,
       name: 'user/someId'
     }
-  },
-  DELETE_ACK : {
-    buildText: true,
-    parseText: true,
+  }),
+  DELETE_ACK : m({
     text: _('R|A|D|user/someId+'),
     message: {
       isAck: true,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.DELETE.BYTE,
       name: 'user/someId'
     }
-  },
-  DELETED : {
-    buildText: true,
+  }),
+  DELETED : m({
     parseText: false,
     text: _('R|A|D|user/someId+'),
     message: {
       isAck: true,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.DELETED.BYTE,
       name: 'user/someId'
     }
-  },
-  SUBSCRIBECREATEANDREAD:{
-    buildText: true,
-    parseText: true,
+  }),
+  SUBSCRIBECREATEANDREAD:m({
     text: _('R|CR|user/someId+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.SUBSCRIBECREATEANDREAD.BYTE,
       name: 'user/someId' 
     }    
-  },
-  UNSUBSCRIBE: {
-    buildText: true,
-    parseText: true,
-    text: _('R|US|user/someId+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.UNSUBSCRIBE.BYTE,
-      name: 'user/someId'
-    }
-  },
-  UNSUBSCRIBE_ACK: {
-    buildText: true,
-    parseText: true,
-    text: _('R|A|US|user/someId+'),
-    message: {
-      isAck: true,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.UNSUBSCRIBE.BYTE,
-      name: 'user/someId'
-    }
-  },
-  LISTEN: {
-    buildText: true,
-    parseText: true,
-    text: _('R|L|.*+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.LISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  LISTEN_ACK: {
-    buildText: true,
-    parseText: true,
-    text: _('R|A|L|.*+'),
-    message: {
-      isAck: true,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.LISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  UNLISTEN: {
-    buildText: true,
-    parseText: true,
-    text: _('R|UL|.*+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.UNLISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  UNLISTEN_ACK: {
-    buildText: true,
-    parseText: true,
-    text: _('R|A|UL|.*+'),
-    message: {
-      isAck: true,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.UNLISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  SUBSCRIPTION_FOR_PATTERN_FOUND: {
-    buildText: true,
-    parseText: true,
-    text: _('R|SP|.*|someSubscription+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE,
-      name: '.*',
-      subscription: 'someSubscription'
-    }
-  },
-  SUBSCRIPTION_FOR_PATTERN_REMOVED: {
-    buildText: true,
-    parseText: true,
-    text: _('R|SR|.*|someSubscription+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.RECORD.BYTE,
-      action: RA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
-      name: '.*',
-      subscription: 'someSubscription'
-    }
-  },
-  SUBSCRIPTION_HAS_PROVIDER: {
-    buildText: true,
-    parseText: true,
+  }),
+  SUBSCRIPTION_HAS_PROVIDER: m({
     text: _('R|SH|someSubscription|T+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.SUBSCRIPTION_HAS_PROVIDER.BYTE,
       name: 'someSubscription'
     }
-  },
-  SUBSCRIPTION_HAS_NO_PROVIDER: {
-    buildText: true,
-    parseText: true,
+  }),
+  SUBSCRIPTION_HAS_NO_PROVIDER: m({
     text: _('R|SH|someSubscription|F+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE,
       name: 'someSubscription'
     }
-  },
-  WRITE_ACKNOWLEDGEMENT: {
-    buildText: true,
-    parseText: true,
-    text: _('R|WA|someSubscription|[-1]|N+'),
+  }),
+  WRITE_ACKNOWLEDGEMENT: m({
+    parseText: false,
+    text: _('R|WA|someSubscription|[-1]|L+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.WRITE_ACKNOWLEDGEMENT.BYTE,
-      name: 'someSubscription'
+      name: 'someSubscription',
+      parsedData: [ [-1], null ]
     }
-  },
-  VERSION_EXISTS: {
-    buildText: true,
-    parseText: true,
-    text: _('R|E|VERSION_EXISTS|recordName|1|{}|config+'),
+  }),
+  VERSION_EXISTS: m({
+    text: _('R|E|VERSION_EXISTS|recordName|1|{}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.VERSION_EXISTS.BYTE,
-      name: 'recordName'
+      name: 'recordName',
+      data: '{}',
+      version: 1,
+      isWriteAck: false
     }
-  },
-  CACHE_RETRIEVAL_TIMEOUT: {
-    buildText: true,
-    parseText: true,
+  }),
+  CACHE_RETRIEVAL_TIMEOUT: m({
     text: _('R|E|CACHE_RETRIEVAL_TIMEOUT|recordName+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.CACHE_RETRIEVAL_TIMEOUT.BYTE,
       name: 'recordName'
     }
-  },
-  STORAGE_RETRIEVAL_TIMEOUT: {
-    buildText: true,
-    parseText: true,
+  }),
+  STORAGE_RETRIEVAL_TIMEOUT: m({
     text: _('R|E|STORAGE_RETRIEVAL_TIMEOUT|recordName+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE,
       name: 'recordName'
     }
-  }
+  }),
+  RECORD_LOAD_ERROR: {},
+  RECORD_CREATE_ERROR: {},
+  RECORD_UPDATE_ERROR: {},
+  RECORD_DELETE_ERROR: {},
+  RECORD_READ_ERROR: {},
+  RECORD_NOT_FOUND: {},
+  INVALID_VERSION: {},  
+  INVALID_PATCH_ON_HOTPATH: {},
+  CREATE: {},
+  SUBSCRIBEANDHEAD: {},
+  SUBSCRIBEANDHEAD_RESPONSE: {},
+  SUBSCRIBEANDREAD: {},
+  SUBSCRIBEANDREAD_RESPONSE: {},
+  SUBSCRIBECREATEANDREAD_RESPONSE: {},
+  SUBSCRIBECREATEANDUPDATE: {},
+  SUBSCRIBECREATEANDUPDATE_RESPONSE: {},
+  HAS: {},
+  HAS_RESPONSE: {}
 }  
+extendWithGenericMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
+extendWithSubscriptionMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
+extendWithListenMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 
 export const RPC_MESSAGES = {
-  REQUEST_ERROR: {
-    buildText: true,
-    parseText: true,
+  REQUEST_ERROR: m({
     text: _('P|E|ERROR_MESSAGE|addValues|1234+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.REQUEST_ERROR.BYTE,
       name: 'addValues',
-      correlationId: '1234'
+      correlationId: '1234',
+      data: 'ERROR_MESSAGE'
     }
-  },
-  REQUEST: {
-    buildText: true,
-    parseText: true,
+  }),
+  REQUEST: m({
     text: _('P|REQ|addValues|1234|{"val1":1,"val2":2}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.REQUEST.BYTE,
       name: 'addValues',
       correlationId: '1234',
       data: '{"val1":1,"val2":2}'      
     }
-  },
-  ACCEPT: {
-    buildText: true,
-    parseText: true,
-    text: _('P|A|REQ|addValues|1234|+'),
+  }),
+  ACCEPT: m({
+    text: _('P|A|REQ|addValues|1234+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.ACCEPT.BYTE,
       name: 'addValues',
       correlationId: '1234'
     }
-  },
-  REJECT: {
-    buildText: true,
-    parseText: true,
-    text: _('P|REJ|addValues|1234|+'),
+  }),
+  REJECT: m({
+    text: _('P|REJ|addValues|1234+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.REJECT.BYTE,
       name: 'addValues',
       correlationId: '1234'   
     }
-  },
-  RESPONSE: {
-    buildText: true,
-    parseText: true,
+  }),
+  RESPONSE: m({
     text: _('P|RES|addValues|1234|{"val1":1,"val2":2}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.RESPONSE.BYTE,
       name: 'addValues',
       correlationId: '1234',
       data: '{"val1":1,"val2":2}'
     }
-  }, 
-  PROVIDE: {
-    buildText: true,
-    parseText: true,
+  }), 
+  PROVIDE: m({
     text: _('P|S|addValues+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.PROVIDE.BYTE,
       name: 'addValues'
     }
-  },
-  PROVIDE_ACK: {
-    buildText: true,
-    parseText: true,
+  }),
+  PROVIDE_ACK: m({
     text: _('P|A|S|addValues+'),
     message: {
       isAck: true,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.PROVIDE.BYTE,
       name: 'addValues'
     }
-  }, 
-  UNPROVIDE: {
-    buildText: true,
-    parseText: true,
+  }), 
+  UNPROVIDE: m({
     text: _('P|US|addValues+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.UNPROVIDE.BYTE,
       name: 'addValues'
     }
-  },
-  UNPROVIDE_ACK: {
-    buildText: true,
-    parseText: true,
+  }),
+  UNPROVIDE_ACK: m({
     text: _('P|A|US|addValues+'),
     message: {
       isAck: true,
-      isError: false,
       topic: TOPIC.RPC.BYTE,
       action: PA.UNPROVIDE.BYTE,
       name: 'addValues'
     }
-  }
+  }),
+  MULTIPLE_RESPONSE: m({
+    text: _('P|E|MULTIPLE_RESPONSE|addValues|1234+'),
+    message: {
+      isAck: true,
+      topic: TOPIC.RPC.BYTE,
+      action: PA.MULTIPLE_RESPONSE.BYTE,
+      name: 'addValues',
+      correlationId: 1234
+    }
+  }),
+  RESPONSE_TIMEOUT: m({
+    text: _('P|E|RESPONSE_TIMEOUT|addValues|1234+'),
+    message: {
+      isAck: true,
+      topic: TOPIC.RPC.BYTE,
+      action: PA.RESPONSE_TIMEOUT.BYTE,
+      name: 'addValues',
+      correlationId: 1234
+    }
+  }),
+  INVALID_RPC_CORRELATION_ID: m({
+    text: _('P|E|INVALID_RPC_CORRELATION_ID|addValues|1234+'),
+    message: {
+      isAck: true,
+      topic: TOPIC.RPC.BYTE,
+      action: PA.INVALID_RPC_CORRELATION_ID.BYTE,
+      name: 'addValues',
+      correlationId: 1234
+    }
+  }),
+  MULTIPLE_ACCEPT: m({
+    text: _('P|E|MULTIPLE_ACCEPT|addValues|1234+'),
+    message: {
+      isAck: true,
+      topic: TOPIC.RPC.BYTE,
+      action: PA.MULTIPLE_ACCEPT.BYTE,
+      name: 'addValues',
+      correlationId: 1234
+    }
+  }),
+  ACCEPT_TIMEOUT: m({
+    text: _('P|E|MULTIPLE_ACCEPT|addValues|1234+'),
+    message: {
+      isAck: true,
+      topic: TOPIC.RPC.BYTE,
+      action: PA.ACCEPT_TIMEOUT.BYTE,
+      name: 'addValues',
+      correlationId: 1234
+    }
+  }),
+  NO_RPC_PROVIDER: m({
+    text: _('P|E|NO_RPC_PROVIDER|addValues|1234+'),
+    message: {
+      isAck: true,
+      topic: TOPIC.RPC.BYTE,
+      action: PA.NO_RPC_PROVIDER.BYTE,
+      name: 'addValues',
+      correlationId: 1234
+    }
+  })
 }
+extendWithGenericMessages(TOPIC.RPC.BYTE, PA, RPC_MESSAGES)
 
 export const EVENT_MESSAGES = {
-  SUBSRIBE: {
-    buildText: true,
-    parseText: true,
-    text: _('E|S|someEvent+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.SUBSCRIBE.BYTE,
-      name: 'someEvent'
-    }
-  },
-  SUBSRIBE_ACK: {
-    buildText: true,
-    parseText: true,
-    text: _('E|A|S|someEvent+'),
-    message: {
-      isAck: true,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.SUBSCRIBE.BYTE,
-      name: 'someEvent'
-    }
-  },
-  UNSUBSRIBE: {
-    buildText: true,
-    parseText: true,
-    text: _('E|US|someEvent+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.UNSUBSCRIBE.BYTE,
-      name: 'someEvent'
-    }
-  },
-  UNSUBSRIBE_ACK: {
-    buildText: true,
-    parseText: true,
-    text: _('E|A|US|someEvent+'),
-    message: {
-      isAck: true,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.UNSUBSCRIBE.BYTE,
-      name: 'someEvent'
-    }
-  },
-  EMIT: {
-    buildText: true,
-    parseText: true,
+
+  EMIT: m({
     text: _('E|EVT|someEvent|Sdata+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.EVENT.BYTE,
       action: EA.EMIT.BYTE,
       name: 'someEvent',
       data: 'Sdata',
       dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM
     }
-  },
-  LISTEN: {
-    buildText: true,
-    parseText: true,
-    text: _('E|L|.*+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.LISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  LISTEN_ACK: {
-    buildText: true,
-    parseText: true,
-    text: _('E|A|L|.*+'),
-    message: {
-      isAck: true,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.LISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  UNLISTEN: {
-    buildText: true,
-    parseText: true,
-    text: _('E|UL|.*+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.UNLISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  UNLISTEN_ACK: {
-    buildText: true,
-    parseText: true,
-    text: _('E|A|UL|.*+'),
-    message: {
-      isAck: true,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.UNLISTEN.BYTE,
-      name: '.*'
-    }
-  },
-  SUBSCRIPTION_FOR_PATTERN_FOUND: {
-    buildText: true,
-    parseText: true,
-    text: _('E|SP|.*|someSubscription+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE,
-      name: '.*',
-      subscription: 'someSubscription'
-    }
-  },
-  SUBSCRIPTION_FOR_PATTERN_REMOVED: {
-    buildText: true,
-    parseText: true,
-    text: _('E|SR|.*|someSubscription+'),
-    message: {
-      isAck: false,
-      isError: false,
-      topic: TOPIC.EVENT.BYTE,
-      action: EA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
-      name: '.*',
-      subscription: 'someSubscription'
-    }
-  }
+  })
 }
+extendWithGenericMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
+extendWithSubscriptionMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
+extendWithListenMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 
 export const PRESENCE_MESSAGES = {
-   SUBSRIBE: {
-    buildText: true,
-    parseText: true,
+   SUBSCRIBE: m({
     text: _('U|S|["alan","john"]+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.SUBSCRIBE.BYTE,
       name: UA.SUBSCRIBE.BYTE,
       data: '["alan","john"]'
     }
-  },
-  SUBSRIBE_ACK: {
-    buildText: true,
-    parseText: true,
+  }),
+  SUBSCRIBE_ACK: m({
     text: _('U|A|S|alan+'),
     message: {
       isAck: true,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.SUBSCRIBE.BYTE,
       name: 'alan'
     }
-  },
-  UNSUBSRIBE: {
-    buildText: true,
-    parseText: true,
+  }),
+  UNSUBSCRIBE: m({
     text: _('U|US|["alan","john"]+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.UNSUBSCRIBE.BYTE,
       name: UA.UNSUBSCRIBE.BYTE,
       data: '["alan","john"]'
     }
-  },
-  UNSUBSRIBE_ACK: {
-    buildText: true,
-    parseText: true,
+  }),
+  UNSUBSCRIBE_ACK: m({
     text: _('U|A|US|alan+'),
     message: {
       isAck: true,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.UNSUBSCRIBE.BYTE,
       name: 'alan'
     }
-  },
-  QUERY_ALL: {
-    buildText: true,
+  }),
+  QUERY_ALL: m({
     parseText: false,
     text: _('U|Q|Q+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL.BYTE,
       name: 'Q'
     }
-  },
-  QUERY_ALL_RESPONSE: {
-    buildText: true,
+  }),
+  QUERY_ALL_RESPONSE: m({
     parseText: false,
     text: _('U|Q|["alan","sarah"]+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL_RESPONSE.BYTE,
       name: UA.QUERY_ALL_RESPONSE.BYTE,
-      data: '["alan", "sarah"]'
+      data: '["alan","sarah"]'
     }
-  },
-  QUERY: {
-    buildText: true,
-    parseText: true,
+  }),
+  QUERY: m({
     text: _('U|Q|1234|["alan"]+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY.BYTE,
       name: UA.QUERY.BYTE,
       correlationId: '1234',
       data: '["alan"]'
     }
-  },
-  QUERY_RESPONSE: {
-    buildText: true,
+  }),
+  QUERY_RESPONSE: m({
     parseText: false,
     text: _('U|Q|1234|{"alan":true}+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_RESPONSE.BYTE,
       name: UA.QUERY_RESPONSE.BYTE,
       correlationId: '1234',
-      data: '{ "alan": true }'
+      data: '{"alan":true}'
     }
-  },
-  PRESENCE_JOIN: {
-    buildText: true,
-    parseText: true,
+  }),
+  PRESENCE_JOIN: m({
     text: _('U|PNJ|username+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.PRESENCE_JOIN.BYTE,
       name: 'username'
     }
-  },
-  PRESENCE_LEAVE: {
-    buildText: true,
-    parseText: true,
+  }),
+  PRESENCE_LEAVE: m({
     text: _('U|PNL|username+'),
     message: {
-      isAck: false,
-      isError: false,
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.PRESENCE_LEAVE.BYTE,
       name: 'username'
     }
+  }),
+  INVALID_PRESENCE_USERS: m({
+    text: _('U|E|INVALID_PRESENCE_USERS|username+'),
+    message: {
+      topic: TOPIC.PRESENCE.BYTE,
+      action: UA.INVALID_PRESENCE_USERS.BYTE,
+      name: 'username'
+    }
+  }),
+  EVERYONE: {
+    // Hack =(
+    buildText: false,
+    parseText: false
   }
 }
+extendWithGenericMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
 
 export const MESSAGES = {
-  RECORD_MESSAGES,
-  RPC_MESSAGES,
-  EVENT_MESSAGES,
-  AUTH_MESSAGES,
-  CONNECTION_MESSAGES,
-  PRESENCE_MESSAGES
+  [TOPIC.PARSER.BYTE]: PARSER_MESSAGES,
+  [TOPIC.RECORD.BYTE]: RECORD_MESSAGES,
+  [TOPIC.RPC.BYTE]: RPC_MESSAGES,
+  [TOPIC.EVENT.BYTE]: EVENT_MESSAGES,
+  [TOPIC.AUTH.BYTE]: AUTH_MESSAGES,
+  [TOPIC.CONNECTION.BYTE]: CONNECTION_MESSAGES,
+  [TOPIC.PRESENCE.BYTE]: PRESENCE_MESSAGES
 }
