@@ -12,14 +12,14 @@ fdescribe('message builder', () => {
         it (`builds ${TOPIC[topic]} messages ${authAction} correctly`, () => {
           pending('Missing message')
         })
-      } else if (MESSAGES[topic][authAction].buildText === true) {
-        it (`builds ${topic} messages ${authAction} correctly`, () => {
+      } else if (MESSAGES[topic][authAction].text.build === true) {
+        it (`builds ${TOPIC[topic]} messages ${authAction} correctly`, () => {
           expect(
             getMessage(
               MESSAGES[topic][authAction].message, 
               authAction.indexOf('_ACK') > -1
             )
-          ).toEqual(MESSAGES[topic][authAction].text)
+          ).toEqual(MESSAGES[topic][authAction].text.value)
         })
       }
     }

@@ -1,5 +1,6 @@
 import { 
   TOPIC, 
+  PARSER_ACTIONS as XA, 
   CONNECTION_ACTIONS as CA, 
   AUTH_ACTIONS as AA,
   EVENT_ACTIONS as EA,
@@ -22,21 +23,21 @@ function _ (message) {
 }
 
 function m (data) {
-  Object.assign({
+  data.message = Object.assign({
     isAck: false,
     isError: false
   }, data.message)
-  Object.assign({
-    buildText: true,
-    parseText: true
-  }, data)
+  data.text = Object.assign({
+    build: true,
+    parse: true
+  }, data.text)
   return data
 }
 
 function extendWithGenericMessages (topic, actions, messages) {
   Object.assign(messages, {
     ERROR: m({
-      text: _(`${TBT[topic]}|E|RANDOM_ERROR+`),
+      text: { value: _(`${TBT[topic]}|E|RANDOM_ERROR+`) },
       message: {
         isAck: false,
         isError: true,
@@ -45,8 +46,27 @@ function extendWithGenericMessages (topic, actions, messages) {
         data: 'RANDOM_ERROR'
       }
     }),
+    INVALID_MESSAGE_DATA: m({
+      text: { value: _(`${TBT[topic]}|E|INVALID_MESSAGE_DATA|name|[invalid+`) },
+      message: {
+        isAck: false,
+        isError: true,
+        topic: topic,
+        action: UA.INVALID_MESSAGE_DATA.BYTE,
+        name: 'name',
+        data: '[invalid'
+      }
+    }),
+  })
+}
+
+function extendWithPermissionErrorMessages (topic, actions, messages) {
+  Object.assign(messages, {
     MESSAGE_PERMISSION_ERROR: m({
-      text: _(`${TBT[topic]}|E|MESSAGE_PERMISSION_ERROR|username+`),
+      text: { 
+        parse: false, 
+        value: _(`${TBT[topic]}|E|MESSAGE_PERMISSION_ERROR|username+`) 
+      },
       message: {
         isAck: false,
         isError: true,
@@ -56,7 +76,10 @@ function extendWithGenericMessages (topic, actions, messages) {
       }
     }),
     MESSAGE_DENIED: m({
-      text: _(`${TBT[topic]}|E|MESSAGE_DENIED|username+`),
+      text: {
+        parse: false,
+        value: _(`${TBT[topic]}|E|MESSAGE_DENIED|username+`)
+      },
       message: {
         isAck: false,
         isError: true,
@@ -65,19 +88,47 @@ function extendWithGenericMessages (topic, actions, messages) {
         name: 'username'
       }
     }),
-    INVALID_MESSAGE_DATA: m({
-      text: _(`${TBT[topic]}|E|INVALID_MESSAGE_DATA|username|[invalid+`),
-      message: {
-        isAck: false,
-        isError: true,
-        topic: topic,
-        action: UA.INVALID_MESSAGE_DATA.BYTE,
-        name: 'username',
-        data: '[invalid'
-      }
-    }),
+  })
+}
+
+function extendWithSubscriptionMessages (topic, actions, messages) {
+    Object.assign(messages, {
+  SUBSCRIBE: m({
+    text: { value: _(`${TBT[topic]}|S|subscription+`) },
+    message: {
+      topic,
+      action: actions.SUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  }),
+  SUBSCRIBE_ACK: m({
+    text: { value: _(`${TBT[topic]}|A|S|subscription+`) },
+    message: {
+      isAck: true,
+      topic,
+      action: actions.SUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  }),
+  UNSUBSCRIBE: m({
+    text: { value: _(`${TBT[topic]}|US|subscription+`) },
+    message: {
+      topic,
+      action: actions.UNSUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  }),
+  UNSUBSCRIBE_ACK: m({
+    text: { value: _(`${TBT[topic]}|A|US|subscription+`) },
+    message: {
+      isAck: true,
+      topic,
+      action: actions.UNSUBSCRIBE.BYTE,
+      name: 'subscription'
+    }
+  }),
     MULTIPLE_SUBSCRIPTIONS: m({
-      text: _(`${TBT[topic]}|E|MULTIPLE_SUBSCRIPTIONS|username+`),
+      text: { value: _(`${TBT[topic]}|E|MULTIPLE_SUBSCRIPTIONS|username+`) },
       message: {
         isAck: false,
         isError: true,
@@ -87,7 +138,7 @@ function extendWithGenericMessages (topic, actions, messages) {
       }
     }),
     NOT_SUBSCRIBED: m({
-      text: _(`${TBT[topic]}|E|NOT_SUBSCRIBED|username+`),
+      text: { value: _(`${TBT[topic]}|E|NOT_SUBSCRIBED|username+`) },
       message: {
         isAck: false,
         isError: true,
@@ -99,49 +150,10 @@ function extendWithGenericMessages (topic, actions, messages) {
   })
 }
 
-function extendWithSubscriptionMessages (topic, actions, messages) {
-    Object.assign(messages, {
-  SUBSCRIBE: m({
-    text: _(`${TBT[topic]}|S|subscription+`),
-    message: {
-      topic,
-      action: actions.SUBSCRIBE.BYTE,
-      name: 'subscription'
-    }
-  }),
-  SUBSCRIBE_ACK: m({
-    text: _(`${TBT[topic]}|A|S|subscription+`),
-    message: {
-      isAck: true,
-      topic,
-      action: actions.SUBSCRIBE.BYTE,
-      name: 'subscription'
-    }
-  }),
-  UNSUBSCRIBE: m({
-    text: _(`${TBT[topic]}|US|subscription+`),
-    message: {
-      topic,
-      action: actions.UNSUBSCRIBE.BYTE,
-      name: 'subscription'
-    }
-  }),
-  UNSUBSCRIBE_ACK: m({
-    text: _(`${TBT[topic]}|A|US|subscription+`),
-    message: {
-      isAck: true,
-      topic,
-      action: actions.UNSUBSCRIBE.BYTE,
-      name: 'subscription'
-    }
-  })
-})
-}
-
 function extendWithListenMessages (topic, actions, messages) {
   Object.assign(messages, {
     LISTEN: m({
-    text: _(`${TBT[topic]}|L|.*+`),
+    text: { value: _(`${TBT[topic]}|L|.*+`) },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: actions.LISTEN.BYTE,
@@ -149,7 +161,7 @@ function extendWithListenMessages (topic, actions, messages) {
     }
   }),
   LISTEN_ACK: m({
-    text: _(`${TBT[topic]}|A|L|.*+`),
+    text: { value: _(`${TBT[topic]}|A|L|.*+`) },
     message: {
       isAck: true,
       topic,
@@ -158,7 +170,7 @@ function extendWithListenMessages (topic, actions, messages) {
     }
   }),
   UNLISTEN: m({
-    text: _(`${TBT[topic]}|UL|.*+`),
+    text: { value: _(`${TBT[topic]}|UL|.*+`) },
     message: {
       topic,
       action: actions.UNLISTEN.BYTE,
@@ -166,7 +178,7 @@ function extendWithListenMessages (topic, actions, messages) {
     }
   }),
   UNLISTEN_ACK: m({
-    text: _(`${TBT[topic]}|A|UL|.*+`),
+    text: { value: _(`${TBT[topic]}|A|UL|.*+`) },
     message: {
       isAck: true,
       topic,
@@ -175,7 +187,7 @@ function extendWithListenMessages (topic, actions, messages) {
     }
   }),
   SUBSCRIPTION_FOR_PATTERN_FOUND: m({
-    text: _(`${TBT[topic]}|SP|.*|someSubscription+`),
+    text: { value: _(`${TBT[topic]}|SP|.*|someSubscription+`) },
     message: {
       topic,
       action: actions.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE,
@@ -184,7 +196,7 @@ function extendWithListenMessages (topic, actions, messages) {
     }
   }),
   SUBSCRIPTION_FOR_PATTERN_REMOVED: m({
-    text: _(`${TBT[topic]}|SR|.*|someSubscription+`),
+    text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
     message: {
       topic,
       action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
@@ -193,7 +205,7 @@ function extendWithListenMessages (topic, actions, messages) {
     }
   }),
   LISTEN_ACCEPT: m({
-    text: _(`${TBT[topic]}|SR|.*|someSubscription+`),
+    text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
     message: {
       topic,
       action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
@@ -202,7 +214,7 @@ function extendWithListenMessages (topic, actions, messages) {
     }
   }),
     LISTEN_REJECT: m({
-    text: _(`${TBT[topic]}|SR|.*|someSubscription+`),
+    text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
     message: {
       topic,
       action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
@@ -214,45 +226,77 @@ function extendWithListenMessages (topic, actions, messages) {
 }
 
 export const PARSER_MESSAGES = {
-  ERROR: {},
-  UNKNOWN_TOPIC: {},
-  UNKNOWN_ACTION: {},
-  INVALID_MESSAGE: {},
-  MESSAGE_PARSE_ERROR: {},
-  MAXIMUM_MESSAGE_SIZE_EXCEEDED: {}
+  UNKNOWN_TOPIC: {
+    text: { value: _('X|F|UNKNOWN_TOPIC|topic+') },
+    message: {
+      topic: TOPIC.PARSER.BYTE,
+      action: XA.UNKNOWN_TOPIC.BYTE,
+      data: 'topic'
+    }
+  },
+  UNKNOWN_ACTION: {
+    text: { value: _('X|E|UNKNOWN_ACTION|action+') },
+    message: {
+      topic: TOPIC.PARSER.BYTE,
+      action: XA.UNKNOWN_TOPIC.BYTE,
+      data: 'action'
+    }
+  },
+  INVALID_MESSAGE: {
+    text: { parse: false, value: _('X|E|INVALID_MESSAGE|action+') },
+    message: {
+      topic: TOPIC.PARSER.BYTE,
+      action: XA.INVALID_MESSAGE.BYTE,
+      data: 'action'
+    }
+  },
+  MESSAGE_PARSE_ERROR: {
+    text: { parse: false, value: _('X|E|MESSAGE_PARSE_ERROR+') },
+    message: {
+      topic: TOPIC.PARSER.BYTE,
+      action: XA.MESSAGE_PARSE_ERROR.BYTE
+    }
+  },
+  MAXIMUM_MESSAGE_SIZE_EXCEEDED: {
+    text: { parse: false, value: _('X|E|MAXIMUM_MESSAGE_SIZE_EXCEEDED+') },
+    message: {
+      topic: TOPIC.PARSER.BYTE,
+      action: XA.MAXIMUM_MESSAGE_SIZE_EXCEEDED.BYTE
+    }
+  }
 }
 
 export const CONNECTION_MESSAGES = {
   ERROR: m({
-    text: _('C|PI+'),
+    text: { value: _('C|PI+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PING.BYTE
     }
   }),
   PING: m({
-    text: _('C|PI+'),
+    text: { value: _('C|PI+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PING.BYTE
     }
   }),
   PONG: m({
-    text: _('C|PO+'),
+    text: { value: _('C|PO+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PONG.BYTE
     }
   }),
   CHALLENGE: m({
-    text: _('C|CH+'),
+    text: { value: _('C|CH+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CHALLENGE.BYTE
     }
   }),
   CHALLENGE_RESPONSE: m({
-    text: _('C|CHR|url+'),
+    text: { value: _('C|CHR|url+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CHALLENGE_RESPONSE.BYTE,
@@ -261,14 +305,14 @@ export const CONNECTION_MESSAGES = {
     }
   }),
   ACCEPT: m({
-    text: _('C|A+'),
+    text: { value: _('C|A+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.ACCEPT.BYTE
     }
   }),
   REJECTION: m({
-    text: _('C|REJ|reason+'),
+    text: { value: _('C|REJ|reason+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.REJECTION.BYTE,
@@ -277,7 +321,7 @@ export const CONNECTION_MESSAGES = {
     }
   }),
   REDIRECT: m({
-    text: _('C|RED|url+'),
+    text: { value: _('C|RED|url+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.REDIRECT.BYTE,
@@ -292,7 +336,7 @@ export const CONNECTION_MESSAGES = {
 
 export const AUTH_MESSAGES = {
   REQUEST: m({
-    text: _('A|REQ|loginData+'),
+    text: { value: _('A|REQ|loginData+') },
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.REQUEST.BYTE,
@@ -301,7 +345,7 @@ export const AUTH_MESSAGES = {
     }
   }),
   AUTH_SUCCESSFUL: m({
-    text: _('A|A|clientData+'),
+    text: { value: _('A|A|clientData+') },
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.AUTH_SUCCESSFUL.BYTE,
@@ -310,7 +354,7 @@ export const AUTH_MESSAGES = {
     }
   }),
   AUTH_UNSUCCESSFUL: m({
-    text: _('A|E|INVALID_AUTH_DATA|errorMessage+'),
+    text: { value: _('A|E|INVALID_AUTH_DATA|errorMessage+') },
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.AUTH_UNSUCCESSFUL.BYTE,
@@ -319,7 +363,7 @@ export const AUTH_MESSAGES = {
     }
   }),
   TOO_MANY_AUTH_ATTEMPTS: m({
-    text: _('A|E|TOO_MANY_AUTH_ATTEMPTS+'),
+    text: { value: _('A|E|TOO_MANY_AUTH_ATTEMPTS+') },
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.TOO_MANY_AUTH_ATTEMPTS.BYTE
@@ -330,7 +374,7 @@ extendWithGenericMessages(TOPIC.AUTH.BYTE, AA, AUTH_MESSAGES)
 
 export const RECORD_MESSAGES = {
   HEAD: m({
-    text: _('R|HD|user/someId+'),
+    text: { value: _('R|HD|user/someId+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.HEAD.BYTE,
@@ -338,8 +382,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   HEAD_RESPONSE: m({
-    parseText: false,
-    text: _('R|HD|user/someId|12+'),
+    text: { parse: false, value: _('R|HD|user/someId|12+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.HEAD_RESPONSE.BYTE,
@@ -348,7 +391,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   READ: m({
-    text: _('R|R|user/someId+'),
+    text: { value: _('R|R|user/someId+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.READ.BYTE,
@@ -356,8 +399,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   READ_RESPONSE: m({
-    parseText: false,
-    text: _('R|R|user/someId|1|{"firstname":"Wolfram"}+'),
+    text: { parse: false, value: _('R|R|user/someId|1|{"firstname":"Wolfram"}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.READ_RESPONSE.BYTE,
@@ -367,7 +409,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   UPDATE: m({
-    text: _('R|U|user/someId|1|{"firstname":"Wolfram"}+'),
+    text: { parse: false, value: _('R|U|user/someId|1|{"firstname":"Wolfram"}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.UPDATE.BYTE,
@@ -379,7 +421,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   UPDATE_WITH_WRITE_ACK: m({
-    text: _('R|U|user/someId|1|{"firstname":"Wolfram"}|{"writeSuccess":true}+'),
+    text: { value: _('R|U|user/someId|1|{"firstname":"Wolfram"}|{"writeSuccess":true}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.UPDATE.BYTE,
@@ -391,7 +433,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   PATCH: m({
-    text: _('R|P|user/someId|1|path|Sdata+'),
+    text: { value: _('R|P|user/someId|1|path|Sdata+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.PATCH.BYTE,
@@ -404,7 +446,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   PATCH_WITH_WRITE_ACK: m({
-    text: _('R|P|user/someId|1|path|Sdata|{"writeSuccess":true}+'),
+    text: { value: _('R|P|user/someId|1|path|Sdata|{"writeSuccess":true}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.PATCH.BYTE,
@@ -417,8 +459,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   ERASE: m({
-    parseText: false,
-    text: _('R|P|user/someId|1|path|U+'),
+    text: { parse: false, value: _('R|P|user/someId|1|path|U+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.ERASE.BYTE,
@@ -430,8 +471,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   ERASE_WITH_WRITE_ACK: m({
-    parseText: false,
-    text: _('R|P|user/someId|1|path|U|{"writeSuccess":true}+'),
+    text: { parse: false, value: _('R|P|user/someId|1|path|U|{"writeSuccess":true}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.ERASE.BYTE,
@@ -443,7 +483,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   CREATEANDUPDATE:m({
-    text: _('R|CU|user/someId|1|{"name":"bob"}+'),
+    text: { value: _('R|CU|user/someId|1|{"name":"bob"}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDUPDATE.BYTE,
@@ -455,7 +495,7 @@ export const RECORD_MESSAGES = {
     }    
   }),
   CREATEANDUPDATE_WITH_WRITE_ACK:m({
-    text: _('R|CU|user/someId|1|{"name":"bob"}|{"writeSuccess":true}+'),
+    text: { value: _('R|CU|user/someId|1|{"name":"bob"}|{"writeSuccess":true}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDUPDATE.BYTE,
@@ -467,7 +507,7 @@ export const RECORD_MESSAGES = {
     }    
   }),
   CREATEANDPATCH:m({
-    text: _('R|CU|user/someId|1|path|Sdata+'),
+    text: { value: _('R|CU|user/someId|1|path|Sdata+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDPATCH.BYTE,
@@ -480,7 +520,7 @@ export const RECORD_MESSAGES = {
     }    
   }),
   CREATEANDPATCH_WITH_WRITE_ACK:m({
-    text: _('R|CU|user/someId|1|path|Sdata|{"writeSuccess":true}+'),
+    text: { value: _('R|CU|user/someId|1|path|Sdata|{"writeSuccess":true}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDPATCH.BYTE,
@@ -493,7 +533,7 @@ export const RECORD_MESSAGES = {
     }    
   }),
   DELETE : m({
-    text: _('R|D|user/someId+'),
+    text: { value: _('R|D|user/someId+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.DELETE.BYTE,
@@ -501,7 +541,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   DELETE_ACK : m({
-    text: _('R|A|D|user/someId+'),
+    text: { value: _('R|A|D|user/someId+') },
     message: {
       isAck: true,
       topic: TOPIC.RECORD.BYTE,
@@ -510,8 +550,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   DELETED : m({
-    parseText: false,
-    text: _('R|A|D|user/someId+'),
+    text: { parse: false, value: _('R|A|D|user/someId+') },
     message: {
       isAck: true,
       topic: TOPIC.RECORD.BYTE,
@@ -520,7 +559,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   SUBSCRIBECREATEANDREAD:m({
-    text: _('R|CR|user/someId+'),
+    text: { value: _('R|CR|user/someId+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.SUBSCRIBECREATEANDREAD.BYTE,
@@ -528,7 +567,7 @@ export const RECORD_MESSAGES = {
     }    
   }),
   SUBSCRIPTION_HAS_PROVIDER: m({
-    text: _('R|SH|someSubscription|T+'),
+    text: { value: _('R|SH|someSubscription|T+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.SUBSCRIPTION_HAS_PROVIDER.BYTE,
@@ -536,7 +575,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   SUBSCRIPTION_HAS_NO_PROVIDER: m({
-    text: _('R|SH|someSubscription|F+'),
+    text: { value: _('R|SH|someSubscription|F+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE,
@@ -544,8 +583,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   WRITE_ACKNOWLEDGEMENT: m({
-    parseText: false,
-    text: _('R|WA|someSubscription|[-1]|L+'),
+    text: { parse: false, value: _('R|WA|someSubscription|[-1]|L+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.WRITE_ACKNOWLEDGEMENT.BYTE,
@@ -554,7 +592,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   VERSION_EXISTS: m({
-    text: _('R|E|VERSION_EXISTS|recordName|1|{}+'),
+    text: { value: _('R|E|VERSION_EXISTS|recordName|1|{}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.VERSION_EXISTS.BYTE,
@@ -565,7 +603,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   CACHE_RETRIEVAL_TIMEOUT: m({
-    text: _('R|E|CACHE_RETRIEVAL_TIMEOUT|recordName+'),
+    text: { value: _('R|E|CACHE_RETRIEVAL_TIMEOUT|recordName+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CACHE_RETRIEVAL_TIMEOUT.BYTE,
@@ -573,7 +611,7 @@ export const RECORD_MESSAGES = {
     }
   }),
   STORAGE_RETRIEVAL_TIMEOUT: m({
-    text: _('R|E|STORAGE_RETRIEVAL_TIMEOUT|recordName+'),
+    text: { value: _('R|E|STORAGE_RETRIEVAL_TIMEOUT|recordName+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE,
@@ -590,22 +628,19 @@ export const RECORD_MESSAGES = {
   INVALID_PATCH_ON_HOTPATH: {},
   CREATE: {},
   SUBSCRIBEANDHEAD: {},
-  SUBSCRIBEANDHEAD_RESPONSE: {},
   SUBSCRIBEANDREAD: {},
-  SUBSCRIBEANDREAD_RESPONSE: {},
-  SUBSCRIBECREATEANDREAD_RESPONSE: {},
   SUBSCRIBECREATEANDUPDATE: {},
-  SUBSCRIBECREATEANDUPDATE_RESPONSE: {},
   HAS: {},
   HAS_RESPONSE: {}
 }  
 extendWithGenericMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
+extendWithPermissionErrorMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 extendWithSubscriptionMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 extendWithListenMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 
 export const RPC_MESSAGES = {
   REQUEST_ERROR: m({
-    text: _('P|E|ERROR_MESSAGE|addValues|1234+'),
+    text: { value: _('P|E|ERROR_MESSAGE|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.REQUEST_ERROR.BYTE,
@@ -615,7 +650,7 @@ export const RPC_MESSAGES = {
     }
   }),
   REQUEST: m({
-    text: _('P|REQ|addValues|1234|{"val1":1,"val2":2}+'),
+    text: { value: _('P|REQ|addValues|1234|{"val1":1,"val2":2}+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.REQUEST.BYTE,
@@ -625,7 +660,7 @@ export const RPC_MESSAGES = {
     }
   }),
   ACCEPT: m({
-    text: _('P|A|REQ|addValues|1234+'),
+    text: { value: _('P|A|REQ|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.ACCEPT.BYTE,
@@ -634,7 +669,7 @@ export const RPC_MESSAGES = {
     }
   }),
   REJECT: m({
-    text: _('P|REJ|addValues|1234+'),
+    text: { value: _('P|REJ|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.REJECT.BYTE,
@@ -643,7 +678,7 @@ export const RPC_MESSAGES = {
     }
   }),
   RESPONSE: m({
-    text: _('P|RES|addValues|1234|{"val1":1,"val2":2}+'),
+    text: { value: _('P|RES|addValues|1234|{"val1":1,"val2":2}+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.RESPONSE.BYTE,
@@ -653,7 +688,7 @@ export const RPC_MESSAGES = {
     }
   }), 
   PROVIDE: m({
-    text: _('P|S|addValues+'),
+    text: { value: _('P|S|addValues+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.PROVIDE.BYTE,
@@ -661,7 +696,7 @@ export const RPC_MESSAGES = {
     }
   }),
   PROVIDE_ACK: m({
-    text: _('P|A|S|addValues+'),
+    text: { value: _('P|A|S|addValues+') },
     message: {
       isAck: true,
       topic: TOPIC.RPC.BYTE,
@@ -670,7 +705,7 @@ export const RPC_MESSAGES = {
     }
   }), 
   UNPROVIDE: m({
-    text: _('P|US|addValues+'),
+    text: { value: _('P|US|addValues+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.UNPROVIDE.BYTE,
@@ -678,7 +713,7 @@ export const RPC_MESSAGES = {
     }
   }),
   UNPROVIDE_ACK: m({
-    text: _('P|A|US|addValues+'),
+    text: { value: _('P|A|US|addValues+') },
     message: {
       isAck: true,
       topic: TOPIC.RPC.BYTE,
@@ -687,9 +722,8 @@ export const RPC_MESSAGES = {
     }
   }),
   MULTIPLE_RESPONSE: m({
-    text: _('P|E|MULTIPLE_RESPONSE|addValues|1234+'),
+    text: { value: _('P|E|MULTIPLE_RESPONSE|addValues|1234+') },
     message: {
-      isAck: true,
       topic: TOPIC.RPC.BYTE,
       action: PA.MULTIPLE_RESPONSE.BYTE,
       name: 'addValues',
@@ -697,9 +731,8 @@ export const RPC_MESSAGES = {
     }
   }),
   RESPONSE_TIMEOUT: m({
-    text: _('P|E|RESPONSE_TIMEOUT|addValues|1234+'),
+    text: { value: _('P|E|RESPONSE_TIMEOUT|addValues|1234+') },
     message: {
-      isAck: true,
       topic: TOPIC.RPC.BYTE,
       action: PA.RESPONSE_TIMEOUT.BYTE,
       name: 'addValues',
@@ -707,9 +740,8 @@ export const RPC_MESSAGES = {
     }
   }),
   INVALID_RPC_CORRELATION_ID: m({
-    text: _('P|E|INVALID_RPC_CORRELATION_ID|addValues|1234+'),
+    text: { value: _('P|E|INVALID_RPC_CORRELATION_ID|addValues|1234+') },
     message: {
-      isAck: true,
       topic: TOPIC.RPC.BYTE,
       action: PA.INVALID_RPC_CORRELATION_ID.BYTE,
       name: 'addValues',
@@ -717,9 +749,8 @@ export const RPC_MESSAGES = {
     }
   }),
   MULTIPLE_ACCEPT: m({
-    text: _('P|E|MULTIPLE_ACCEPT|addValues|1234+'),
+    text: { value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
     message: {
-      isAck: true,
       topic: TOPIC.RPC.BYTE,
       action: PA.MULTIPLE_ACCEPT.BYTE,
       name: 'addValues',
@@ -727,9 +758,8 @@ export const RPC_MESSAGES = {
     }
   }),
   ACCEPT_TIMEOUT: m({
-    text: _('P|E|MULTIPLE_ACCEPT|addValues|1234+'),
+    text: { value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
     message: {
-      isAck: true,
       topic: TOPIC.RPC.BYTE,
       action: PA.ACCEPT_TIMEOUT.BYTE,
       name: 'addValues',
@@ -737,9 +767,8 @@ export const RPC_MESSAGES = {
     }
   }),
   NO_RPC_PROVIDER: m({
-    text: _('P|E|NO_RPC_PROVIDER|addValues|1234+'),
+    text: { value: _('P|E|NO_RPC_PROVIDER|addValues|1234+') },
     message: {
-      isAck: true,
       topic: TOPIC.RPC.BYTE,
       action: PA.NO_RPC_PROVIDER.BYTE,
       name: 'addValues',
@@ -748,11 +777,12 @@ export const RPC_MESSAGES = {
   })
 }
 extendWithGenericMessages(TOPIC.RPC.BYTE, PA, RPC_MESSAGES)
+extendWithPermissionErrorMessages(TOPIC.RPC.BYTE, PA, RPC_MESSAGES)
 
 export const EVENT_MESSAGES = {
 
   EMIT: m({
-    text: _('E|EVT|someEvent|Sdata+'),
+    text: { value: _('E|EVT|someEvent|Sdata+') },
     message: {
       topic: TOPIC.EVENT.BYTE,
       action: EA.EMIT.BYTE,
@@ -763,12 +793,13 @@ export const EVENT_MESSAGES = {
   })
 }
 extendWithGenericMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
+extendWithPermissionErrorMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 extendWithSubscriptionMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 extendWithListenMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 
 export const PRESENCE_MESSAGES = {
    SUBSCRIBE: m({
-    text: _('U|S|["alan","john"]+'),
+    text: { value: _('U|S|["alan","john"]+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.SUBSCRIBE.BYTE,
@@ -777,7 +808,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   SUBSCRIBE_ACK: m({
-    text: _('U|A|S|alan+'),
+    text: { value: _('U|A|S|alan+') },
     message: {
       isAck: true,
       topic: TOPIC.PRESENCE.BYTE,
@@ -786,7 +817,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   UNSUBSCRIBE: m({
-    text: _('U|US|["alan","john"]+'),
+    text: { value: _('U|US|["alan","john"]+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.UNSUBSCRIBE.BYTE,
@@ -795,7 +826,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   UNSUBSCRIBE_ACK: m({
-    text: _('U|A|US|alan+'),
+    text: { value: _('U|A|US|alan+') },
     message: {
       isAck: true,
       topic: TOPIC.PRESENCE.BYTE,
@@ -804,8 +835,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   QUERY_ALL: m({
-    parseText: false,
-    text: _('U|Q|Q+'),
+    text: { parse: false, value: _('U|Q|Q+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL.BYTE,
@@ -813,8 +843,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   QUERY_ALL_RESPONSE: m({
-    parseText: false,
-    text: _('U|Q|["alan","sarah"]+'),
+    text: { parse: false, value: _('U|Q|["alan","sarah"]+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL_RESPONSE.BYTE,
@@ -823,7 +852,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   QUERY: m({
-    text: _('U|Q|1234|["alan"]+'),
+    text: { value: _('U|Q|1234|["alan"]+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY.BYTE,
@@ -833,8 +862,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   QUERY_RESPONSE: m({
-    parseText: false,
-    text: _('U|Q|1234|{"alan":true}+'),
+    text: { parse: false, value: _('U|Q|1234|{"alan":true}+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_RESPONSE.BYTE,
@@ -844,7 +872,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   PRESENCE_JOIN: m({
-    text: _('U|PNJ|username+'),
+    text: { value: _('U|PNJ|username+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.PRESENCE_JOIN.BYTE,
@@ -852,7 +880,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   PRESENCE_LEAVE: m({
-    text: _('U|PNL|username+'),
+    text: { value: _('U|PNL|username+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.PRESENCE_LEAVE.BYTE,
@@ -860,7 +888,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   INVALID_PRESENCE_USERS: m({
-    text: _('U|E|INVALID_PRESENCE_USERS|username+'),
+    text: { value: _('U|E|INVALID_PRESENCE_USERS|username+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.INVALID_PRESENCE_USERS.BYTE,
@@ -869,11 +897,11 @@ export const PRESENCE_MESSAGES = {
   }),
   EVERYONE: {
     // Hack =(
-    buildText: false,
-    parseText: false
+    text: { build: false, parse: false },
   }
 }
 extendWithGenericMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
+extendWithPermissionErrorMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
 
 export const MESSAGES = {
   [TOPIC.PARSER.BYTE]: PARSER_MESSAGES,
