@@ -195,14 +195,15 @@ export const parse = (rawMessage) => {
           action = UA.QUERY_ALL.BYTE
         } else {
           correlationId = parts[index++]
+          data = parts[index++]
         }
       }
       else if (action === UA.SUBSCRIBE.BYTE || action === UA.UNSUBSCRIBE.BYTE) {
         if (parts.length === 4 && !isAck) {
           correlationId = parts[index++]
         }
+        data = parts[index++]
       }
-      name = parts[index++].toString()
       /************************
       ***  Connection
       *************************/

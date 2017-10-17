@@ -142,16 +142,16 @@ const BUILDERS = {
   },
   [TOPIC.PRESENCE.BYTE]: {
     [UA.ERROR.BYTE]: genericError,
-    [UA.SUBSCRIBE.BYTE]: (msg, event, isAck) => `U${y}${isAck? A : '' }S${y}${msg.correlationId? msg.correlationId + y : '' }${msg.data ? msg.data : msg.name }${x}`,
-    [UA.UNSUBSCRIBE.BYTE]: (msg, event, isAck)  => `U${y}${isAck? A : '' }US${y}${msg.correlationId? msg.correlationId + y : '' }${msg.data ? msg.data : msg.name }${x}`,
-    [UA.QUERY.BYTE]: msg => `U${y}Q${y}${msg.correlationId}${y}${msg.name}${x}`,
+    [UA.SUBSCRIBE.BYTE]: (msg, event, isAck) => `U${y}${isAck? A : '' }S${y}${msg.correlationId? msg.correlationId + y : '' }${msg.name ? msg.name : msg.data}${x}`,
+    [UA.UNSUBSCRIBE.BYTE]: (msg, event, isAck)  => `U${y}${isAck? A : '' }US${y}${msg.correlationId? msg.correlationId + y : '' }${msg.name ? msg.name : msg.data}${x}`,
+    [UA.QUERY.BYTE]: msg => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
     [UA.QUERY_RESPONSE.BYTE]: msg => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
     [UA.QUERY_ALL.BYTE]: msg => `U${y}Q${y}Q${x}`,
     [UA.QUERY_ALL_RESPONSE.BYTE]: msg => `U${y}Q${msg.parsedData.length > 0 ? y + msg.parsedData.join(y) : '' }${x}`,
     [UA.PRESENCE_JOIN.BYTE]: msg => `U${y}PNJ${y}${msg.name}${x}`,
     [UA.PRESENCE_LEAVE.BYTE]: msg => `U${y}PNL${y}${msg.name}${x}`,
 
-    [UA.INVALID_PRESENCE_USERS.BYTE]: msg => `U${y}E${y}INVALID_PRESENCE_USERS${y}${msg.name}${x}`,
+    [UA.INVALID_PRESENCE_USERS.BYTE]: msg => `U${y}E${y}INVALID_PRESENCE_USERS${y}${msg.data}${x}`,
     
     [UA.INVALID_MESSAGE_DATA.BYTE]: invalidMessageData,
     [UA.MESSAGE_DENIED.BYTE]: messageDenied,

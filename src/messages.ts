@@ -782,7 +782,7 @@ export const PRESENCE_MESSAGES = {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.SUBSCRIBE.BYTE,
       correlationId: '1234',
-      name: '["alan","john"]'
+      data: '["alan","john"]'
     }
   }),
   SUBSCRIBE_ACK: m({
@@ -800,11 +800,11 @@ export const PRESENCE_MESSAGES = {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.UNSUBSCRIBE.BYTE,
       correlationId: '1234',
-      name: '["alan","john"]'
+      data: '["alan","john"]'
     }
   }),
   UNSUBSCRIBE_ACK: m({
-    text: { value: _('U|A|US|alan+') },
+    text: { parse: false, value: _('U|A|US|alan+') },
     message: {
       isAck: true,
       topic: TOPIC.PRESENCE.BYTE,
@@ -819,7 +819,6 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL.BYTE,
-      name: 'Q'
     }
   }),
   QUERY_ALL_RESPONSE: m({
@@ -827,7 +826,6 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL_RESPONSE.BYTE,
-      name: UA.QUERY_ALL_RESPONSE.BYTE,
       parsedData: ["alan","sarah"]
     }
   }),
@@ -836,8 +834,8 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY.BYTE,
-      name: '["alan"]',
-      correlationId: '1234'
+      correlationId: '1234',
+      data: '["alan"]',
     }
   }),
   QUERY_RESPONSE: m({
@@ -845,13 +843,12 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_RESPONSE.BYTE,
-      name: UA.QUERY_RESPONSE.BYTE,
       correlationId: '1234',
       data: '{"alan":true}'
     }
   }),
   PRESENCE_JOIN: m({
-    text: { value: _('U|PNJ|username+') },
+    text: { parse: false, value: _('U|PNJ|username+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.PRESENCE_JOIN.BYTE,
@@ -859,7 +856,7 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   PRESENCE_LEAVE: m({
-    text: { value: _('U|PNL|username+') },
+    text: { parse: false, value: _('U|PNL|username+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.PRESENCE_LEAVE.BYTE,
@@ -869,12 +866,12 @@ export const PRESENCE_MESSAGES = {
   INVALID_PRESENCE_USERS: m({
     text: { 
       parse: false,
-      value: _('U|E|INVALID_PRESENCE_USERS|username+') 
+      value: _('U|E|INVALID_PRESENCE_USERS|data+') 
     },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.INVALID_PRESENCE_USERS.BYTE,
-      name: 'username'
+      data: 'data'
     }
   })
 }
