@@ -18,29 +18,22 @@ import {
 const WA = y + JSON.stringify({ writeSuccess: true })
 const A = 'A' + y
 
-function messageDenied (msg, event) {
-  return `${TBT[msg.topic]}${y}E${y}MESSAGE_DENIED${y}${msg.name}${y}${ABT[msg.topic][msg.action]}${msg.correlationId ? y + msg.correlationId : '' }${x}`
-}
-
-function notSubscribed (msg, event) {
-  return `${TBT[msg.topic]}${y}E${y}NOT_SUBSCRIBED{y}${msg.name}${x}`
-}
-
-function invalidAuth (msg) {
-  return `A${y}E${y}INVALID_AUTH_DATA${y}${msg.data ? msg.data : 'U' }${x}`
-}
-
-function recordUpdate (msg) {
-  return `R${y}U${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
-}
-
-function recordPatch (msg) {
-  return `R${y}P${y}${msg.name}${y}${msg.version}${y}${msg.path}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
-}
+const genericError = (msg, event, eventMessage) => `${TBT[msg.topic]}${y}E${y}${event}${y}${eventMessage}${x}`
+const messageDenied = (msg, event) => `${TBT[msg.topic]}${y}E${y}MESSAGE_DENIED${y}${msg.name}${y}${ABT[msg.topic][msg.action]}${msg.correlationId ? y + msg.correlationId : '' }${x}`
+const notSubscribed = (msg, event) => `${TBT[msg.topic]}${y}E${y}NOT_SUBSCRIBED${y}${msg.name}${x}`
+const invalidAuth = msg => `A${y}E${y}INVALID_AUTH_DATA${y}${msg.data ? msg.data : 'U' }${x}`
+const recordUpdate = (msg) => `R${y}U${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
+const recordPatch = (msg) => `R${y}P${y}${msg.name}${y}${msg.version}${y}${msg.path}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
+const subscriptionForPatternFound = (msg) => `${TBT[msg.topic]}${y}SP${y}${msg.name}${y}${msg.subscription}${x}`
+const subscriptionForPatternRemoved = (msg) => `${TBT[msg.topic]}${y}SR${y}${msg.name}${y}${msg.subscription}${x}`
+const listen = (msg, event, isAck) => `${TBT[msg.topic]}${y}${isAck? A : '' }L${y}${msg.name}${x}`
+const unlisten = (msg, event, isAck) => `${TBT[msg.topic]}${y}${isAck? A : '' }UL${y}${msg.name}${x}`
+const listenAccept = msg => `${TBT[msg.topic]}${y}LA${y}${msg.name}${y}${msg.subscription}${x}`
+const listenReject = msg => `${TBT[msg.topic]}${y}LR${y}${msg.name}${y}${msg.subscription}${x}`
 
 const BUILDERS = {
   [TOPIC.CONNECTION.BYTE]: {
-    [CA.ERROR.BYTE]: (msg, event) => ``,
+    [CA.ERROR.BYTE]: genericError,
     [CA.CHALLENGE.BYTE]: msg => `C${y}CH${x}`,
     [CA.CHALLENGE_RESPONSE.BYTE]: msg => `C${y}CHR${y}${msg.data}${x}`,
     [CA.ACCEPT.BYTE]: msg => `C${y}A${x}`,
@@ -51,7 +44,7 @@ const BUILDERS = {
     [CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE]: msg => `C${y}E${y}CONNECTION_AUTHENTICATION_TIMEOUT${x}`
   },
   [TOPIC.AUTH.BYTE]: {
-    [AA.ERROR.BYTE]: (msg, event) => ``,
+    [AA.ERROR.BYTE]: genericError,
     [AA.REQUEST.BYTE]: msg => `A${y}REQ${y}${msg.data}${x}`,
     [AA.AUTH_SUCCESSFUL.BYTE]: msg => `A${y}A${msg.data ? y + msg.data : ''}${x}`,
     [AA.AUTH_UNSUCCESSFUL.BYTE]: invalidAuth,
@@ -59,20 +52,21 @@ const BUILDERS = {
     [AA.TOO_MANY_AUTH_ATTEMPTS.BYTE]: msg => `A${y}E${y}TOO_MANY_AUTH_ATTEMPTS${x}`,
   },
   [TOPIC.EVENT.BYTE]: {
-    [EA.ERROR.BYTE]: (msg, event) => ``,
+    [EA.ERROR.BYTE]: genericError,
     [EA.SUBSCRIBE.BYTE]: (msg, event, isAck) => `E${y}${isAck? A : '' }S${y}${msg.name}${x}`,
     [EA.UNSUBSCRIBE.BYTE]: (msg, event, isAck) => `E${y}${isAck? A : '' }US${y}${msg.name}${x}`,
     [EA.EMIT.BYTE]: msg => `E${y}EVT${y}${msg.name}${y}${msg.data ? msg.data : 'U'}${x}`,
-    [EA.LISTEN.BYTE]: (msg, event, isAck) => `E${y}${isAck? A : '' }L${y}${msg.name}${x}`,
-    [EA.UNLISTEN.BYTE]: (msg, event, isAck) => `E${y}${isAck? A : '' }UL${y}${msg.name}${x}`,
-    [EA.LISTEN_ACCEPT.BYTE]: msg => `E${y}LA${y}${msg.name}${y}${msg.subscription}${x}`,
-    [EA.LISTEN_REJECT.BYTE]: msg => `E${y}SP${y}${msg.name}${y}${msg.subscription}${x}`,
-    [EA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE]: msg => `E${y}SP${y}${msg.name}${y}${msg.subscription}${x}`,
-    [EA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE]: msg => `E${y}SR${y}${msg.name}${y}${msg.subscription}${x}`,
+    [EA.LISTEN.BYTE]: listen,
+    [EA.UNLISTEN.BYTE]: unlisten,
+    [EA.LISTEN_ACCEPT.BYTE]: listenAccept,
+    [EA.LISTEN_REJECT.BYTE]: listenReject,
+    [EA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE]: subscriptionForPatternFound,
+    [EA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE]: subscriptionForPatternRemoved,
     [EA.MESSAGE_DENIED.BYTE]: messageDenied,
     [EA.NOT_SUBSCRIBED.BYTE]: notSubscribed
   },
   [TOPIC.RECORD.BYTE]: {
+    [RA.ERROR.BYTE]: genericError,
     [RA.HEAD.BYTE]: (msg, event) => `R${y}HD${y}${msg.name}${x}`,
     [RA.HEAD_RESPONSE.BYTE]: (msg, event) => `R${y}HD${y}${msg.name}${y}${msg.data}${x}`,
     [RA.READ.BYTE]: (msg, event) => `R${y}R${y}${msg.name}${x}`,
@@ -93,19 +87,19 @@ const BUILDERS = {
     [RA.UNSUBSCRIBE.BYTE]: (msg, event, isAck) => `R${y}${isAck? A : '' }US${y}${msg.name}${x}`,
     [RA.WRITE_ACKNOWLEDGEMENT.BYTE]: (msg, event, isAck) => `R${y}WA${y}${msg.name}${y}${JSON.stringify(msg.parsedData[0])}${y}${typed(msg.parsedData[1])}${x}`,
     
-    [RA.LISTEN.BYTE]: (msg, event, isAck) => `R${y}${isAck? A : '' }L${y}${msg.name}${x}`,
-    [RA.UNLISTEN.BYTE]: (msg, event, isAck) => `R${y}${isAck? A : '' }UL${y}${msg.name}${x}`,
-    [RA.LISTEN_ACCEPT.BYTE]: msg => `R${y}LA${y}${msg.name}${y}${msg.subscription}${x}`,
-    [RA.LISTEN_REJECT.BYTE]: msg => `R${y}SP${y}${msg.name}${y}${msg.subscription}${x}`,
-    [RA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE]: msg => `R${y}SP${y}${msg.name}${y}${msg.subscription}${x}`,
-    [RA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE]: msg => `R${y}SR${y}${msg.name}${y}${msg.subscription}${x}`,
+    [RA.LISTEN.BYTE]: listen,
+    [RA.UNLISTEN.BYTE]: unlisten,
+    [RA.LISTEN_ACCEPT.BYTE]: listenAccept,
+    [RA.LISTEN_REJECT.BYTE]: listenReject,
+    [RA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE]: subscriptionForPatternFound,
+    [RA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE]: subscriptionForPatternRemoved,
     [RA.SUBSCRIPTION_HAS_PROVIDER.BYTE]: msg => `R${y}SH${y}${msg.name}${y}T${x}`,
     [RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE]: msg => `R${y}SH${y}${msg.name}${y}F${x}`,
     
     [RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE]: msg => `R${y}E${y}STORAGE_RETRIEVAL_TIMEOUT${y}${msg.name}${x}`,
     [RA.CACHE_RETRIEVAL_TIMEOUT.BYTE]: msg => `R${y}E${y}CACHE_RETRIEVAL_TIMEOUT${y}${msg.name}${x}`,
     [RA.VERSION_EXISTS.BYTE]: msg => `R${y}E${y}VERSION_EXISTS${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck? WA : ''}${x}`,
-    [RA.RECORD_NOT_FOUND.BYTE]: msg => `R${y}E${y}RECORD_NOT_FOUND${y}${msg.name}${x}`,
+    [RA.RECORD_NOT_FOUND.BYTE]: msg => `R${y}E${y}SN${y}${msg.name}${y}RECORD_NOT_FOUND${x}`,
     
     [RA.MESSAGE_DENIED.BYTE]: messageDenied,
     [RA.NOT_SUBSCRIBED.BYTE]: notSubscribed,
@@ -114,7 +108,7 @@ const BUILDERS = {
     [RA.HAS_RESPONSE.BYTE]: msg => `R${y}H${y}${msg.name}${y}${msg.parsedData ? 'T' : 'F' }${x}`,
   },
   [TOPIC.RPC.BYTE]: {
-    [PA.ERROR.BYTE]: (msg, event) => ``,
+    [PA.ERROR.BYTE]: genericError,
     [PA.PROVIDE.BYTE]: (msg, event, isAck) => `P${y}${isAck? A : '' }S${y}${msg.name}${x}`,
     [PA.UNPROVIDE.BYTE]: (msg, event, isAck) => `P${y}${isAck? A : '' }US${y}${msg.name}${x}`,
     [PA.REQUEST.BYTE]: msg => `P${y}REQ${y}${msg.name}${y}${msg.correlationId}${y}${msg.data}${x}`,
@@ -131,13 +125,13 @@ const BUILDERS = {
     [PA.NOT_SUBSCRIBED.BYTE]: notSubscribed
   },
   [TOPIC.PRESENCE.BYTE]: {
-    [UA.ERROR.BYTE]: (msg, event) => ``,
+    [UA.ERROR.BYTE]: genericError,
     [UA.SUBSCRIBE.BYTE]: (msg, event, isAck) => `U${y}${isAck? A : '' }S${y}${msg.data ? msg.data : msg.name }${x}`,
     [UA.UNSUBSCRIBE.BYTE]: (msg, event, isAck)  => `U${y}${isAck? A : '' }US${y}${msg.data ? msg.data : msg.name }${x}`,
     [UA.QUERY.BYTE]: msg => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
-    [UA.QUERY_ALL.BYTE]: msg => `U${y}Q${y}Q${x}`,
-    [UA.QUERY_ALL_RESPONSE.BYTE]: msg => `U${y}Q${y}${msg.data}${x}`,
     [UA.QUERY_RESPONSE.BYTE]: msg => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
+    [UA.QUERY_ALL.BYTE]: msg => `U${y}Q${y}Q${x}`,
+    [UA.QUERY_ALL_RESPONSE.BYTE]: msg => `U${y}Q${msg.parsedData.length > 0 ? y + msg.parsedData.join(y) : '' }${x}`,
     [UA.PRESENCE_JOIN.BYTE]: msg => `U${y}PNJ${y}${msg.name}${x}`,
     [UA.PRESENCE_LEAVE.BYTE]: msg => `U${y}PNL${y}${msg.name}${x}`,
 
@@ -149,17 +143,10 @@ const BUILDERS = {
 /**
  * Creates a deepstream message string, based on the
  * provided parameters
- *
- * @param   {String} topic  One of CONSTANTS.TOPIC
- * @param   {String} action One of CONSTANTS.ACTIONS
- * @param   {Array} data An array of strings or JSON-serializable objects
- *
- * @returns {String} deepstream message string
  */
 export const getMessage = (message, isAck):string => {
   if (!BUILDERS[message.topic] || !BUILDERS[message.topic][message.action]) {
     console.log(message, isAck)
-    console.trace()
   }
   const builder = BUILDERS[message.topic][message.action]
   if (!builder) {
@@ -187,8 +174,6 @@ export const getMessage = (message, isAck):string => {
 export const getErrorMessage = function (message, errorAction, errorMessage) {
   if (!BUILDERS[message.topic] || !BUILDERS[message.topic][errorAction]) {
     console.log(message, errorAction, errorMessage)
-    // console.trace()
-    // process.exit()
   }
   const builder = BUILDERS[message.topic][errorAction]
   if (message.parsedData && message.data === undefined) {

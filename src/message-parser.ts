@@ -98,13 +98,12 @@ export const parse = (rawMessage) => {
         continue
       }
     }
-
     /************************
     ***  RECORD
     *************************/
     if (topic === TOPIC.RECORD.BYTE) {
-      console.log(parts)
       name = parts[index++]
+      path = null
       if (isError) {
         isError = false
         if (rawAction === 'VERSION_EXISTS') {
@@ -132,33 +131,25 @@ export const parse = (rawMessage) => {
           version = parts[index++] * 1
         }
         if (parts[parts.length - 1] === writeConfig) {
-          parts.pop()
           isWriteAck = true
         }
         if (
-          (action === RA.CREATEANDUPDATE.BYTE && (parts.length - index === 1)) ||
+          (action === RA.CREATEANDUPDATE.BYTE && parts.length === 6) ||
           action === RA.UPDATE.BYTE
         ) {
           dataEncoding = PAYLOAD_ENCODING.JSON
         }
         else if (
-          (action === RA.CREATEANDUPDATE.BYTE && parts.length - index > 1) ||
+          (action === RA.CREATEANDUPDATE.BYTE && parts.length === 7) ||
           action === RA.PATCH.BYTE
         ) {
-          if (
-            action === RA.CREATEANDUPDATE.BYTE && 
-            parts.length - index > 1 &&
-            parts[parts.length - 1] !== '{}'
-          ) {
+          if (action === RA.CREATEANDUPDATE.BYTE) {
             action = RA.CREATEANDPATCH.BYTE
-          } else {
-            dataEncoding = PAYLOAD_ENCODING.JSON
           }
-          if (action === RA.PATCH.BYTE || action === RA.CREATEANDPATCH.BYTE) {
-            dataEncoding = PAYLOAD_ENCODING.DEEPSTREAM
-            path = parts[index++]    
-          }
+          dataEncoding = PAYLOAD_ENCODING.DEEPSTREAM
+          path = parts[index++]    
         }
+
         if (parts.length - index === 2) {
           data = parts[parts.length - 2]
         } else {
@@ -220,16 +211,18 @@ export const parse = (rawMessage) => {
     *************************/
     else if (topic === TOPIC.PRESENCE.BYTE) {
       if (action === UA.QUERY.BYTE) {
-        correlationId = parts[index++]
+        if (parts.length === 3) {
+          action = UA.QUERY_ALL.BYTE
+        } else {
+          correlationId = parts[index++]
+        }
       }
-      if (isAck || action === UA.QUERY.BYTE || action === UA.PRESENCE_JOIN.BYTE || action === UA.PRESENCE_LEAVE.BYTE) {
-        name = parts[index++].toString()
-      } else {
-        name = action.toString()
+      else if (action === UA.SUBSCRIBE.BYTE || action === UA.UNSUBSCRIBE.BYTE) {
+        if (parts.length === 4) {
+          correlationId = parts[index++]
+        }
       }
-      if (!isAck && (action === UA.QUERY.BYTE || action === UA.SUBSCRIBE.BYTE || action === UA.UNSUBSCRIBE.BYTE)) {
-        data = parts[index++]
-      }
+      name = parts[index++].toString()
       /************************
       ***  Connection
       *************************/
@@ -290,7 +283,8 @@ export const parse = (rawMessage) => {
       path,
       version,
       // parsedData: null,
-      isWriteAck
+      isWriteAck,
+      raw: rawMessage
     })))
   }
   return parsedMessages

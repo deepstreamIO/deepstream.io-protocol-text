@@ -903,11 +903,7 @@ export const PRESENCE_MESSAGES = {
       action: UA.INVALID_PRESENCE_USERS.BYTE,
       name: 'username'
     }
-  }),
-  EVERYONE: {
-    // Hack =(
-    text: { build: false, parse: false },
-  }
+  })
 }
 extendWithGenericMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
 extendWithPermissionErrorMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
