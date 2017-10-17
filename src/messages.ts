@@ -36,33 +36,8 @@ function m (data) {
 
 function extendWithGenericMessages (topic, actions, messages) {
   Object.assign(messages, {
-    ERROR: m({
-      text: { 
-        parse: false, 
-        value: _(`${TBT[topic]}|E|RANDOM_ERROR+`) 
-      },
-      message: {
-        isAck: false,
-        isError: true,
-        topic: topic,
-        action: UA.ERROR.BYTE,
-        data: 'RANDOM_ERROR'
-      }
-    }),
-    INVALID_MESSAGE_DATA: m({
-      text: { 
-        parse: false, 
-        value: _(`${TBT[topic]}|E|INVALID_MESSAGE_DATA|name|[invalid+`) 
-      },
-      message: {
-        isAck: false,
-        isError: true,
-        topic: topic,
-        action: UA.INVALID_MESSAGE_DATA.BYTE,
-        name: 'name',
-        data: '[invalid'
-      }
-    }),
+    ERROR: {},
+    INVALID_MESSAGE_DATA: {}
   })
 }
 
@@ -273,13 +248,6 @@ export const PARSER_MESSAGES = {
 }
 
 export const CONNECTION_MESSAGES = {
-  ERROR: m({
-    text: { value: _('C|PI+') },
-    message: {
-      topic: TOPIC.CONNECTION.BYTE,
-      action: CA.PING.BYTE
-    }
-  }),
   PING: m({
     text: { value: _('C|PI+') },
     message: {
@@ -306,8 +274,7 @@ export const CONNECTION_MESSAGES = {
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CHALLENGE_RESPONSE.BYTE,
-      data: 'url',
-      dataEncoding: PAYLOAD_ENCODING.JSON
+      data: 'url'
     }
   }),
   ACCEPT: m({
@@ -322,8 +289,7 @@ export const CONNECTION_MESSAGES = {
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.REJECTION.BYTE,
-      data: 'reason',
-      dataEncoding: PAYLOAD_ENCODING.JSON
+      data: 'reason'
     }
   }),
   REDIRECT: m({
@@ -331,13 +297,17 @@ export const CONNECTION_MESSAGES = {
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.REDIRECT.BYTE,
-      data: 'url',
-      dataEncoding: PAYLOAD_ENCODING.JSON
+      data: 'url'
     }
   }),
-  CONNECTION_AUTHENTICATION_TIMEOUT: {
-
-  }
+  ERROR: {},
+  CONNECTION_AUTHENTICATION_TIMEOUT: m({
+    text: { parse: false, value: _('C|E|CONNECTION_AUTHENTICATION_TIMEOUT+') },
+    message: {
+      topic: TOPIC.CONNECTION.BYTE,
+      action: CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE,
+    }
+  }),
 }
 
 export const AUTH_MESSAGES = {
@@ -346,8 +316,7 @@ export const AUTH_MESSAGES = {
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.REQUEST.BYTE,
-      data: 'loginData',
-      dataEncoding: PAYLOAD_ENCODING.JSON
+      data: 'loginData'
     }
   }),
   AUTH_SUCCESSFUL: m({
@@ -355,8 +324,7 @@ export const AUTH_MESSAGES = {
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.AUTH_SUCCESSFUL.BYTE,
-      data: 'clientData',
-      dataEncoding: PAYLOAD_ENCODING.JSON
+      data: 'clientData'
     }
   }),
   AUTH_UNSUCCESSFUL: m({
@@ -364,8 +332,7 @@ export const AUTH_MESSAGES = {
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.AUTH_UNSUCCESSFUL.BYTE,
-      data: 'errorMessage',
-      dataEncoding: PAYLOAD_ENCODING.JSON
+      data: 'errorMessage'
     }
   }),
   TOO_MANY_AUTH_ATTEMPTS: m({
@@ -376,9 +343,22 @@ export const AUTH_MESSAGES = {
     }
   }),
   MESSAGE_PERMISSION_ERROR: {},
-  MESSAGE_DENIED: {}
+  MESSAGE_DENIED: {},
+  ERROR: {},
+  INVALID_MESSAGE_DATA: m({
+    text: { 
+      parse: false, 
+      value: _(`A|E|INVALID_AUTH_DATA|[invalid+`) 
+    },
+    message: {
+      isAck: false,
+      isError: true,
+      topic: TOPIC.AUTH.BYTE,
+      action: UA.INVALID_MESSAGE_DATA.BYTE,
+      data: '[invalid'
+    }
+  })
 }
-extendWithGenericMessages(TOPIC.AUTH.BYTE, AA, AUTH_MESSAGES)
 
 export const RECORD_MESSAGES = {
   HEAD: m({
@@ -421,7 +401,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.UPDATE.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.JSON,
       name: 'user/someId',
       version: 1,
       data: '{"firstname":"Wolfram"}',
@@ -433,7 +412,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.UPDATE.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.JSON,
       name: 'user/someId',
       version: 1,
       data: '{"firstname":"Wolfram"}',
@@ -445,7 +423,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.PATCH.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
       name: 'user/someId',
       path: 'path',
       version: 1,
@@ -458,7 +435,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.PATCH.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
       name: 'user/someId',
       path: 'path',
       version: 1,
@@ -471,7 +447,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.ERASE.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
       name: 'user/someId',
       path: 'path',
       version: 1,
@@ -483,7 +458,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.ERASE.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
       name: 'user/someId',
       path: 'path',
       version: 1,
@@ -491,11 +465,10 @@ export const RECORD_MESSAGES = {
     }
   }),
   CREATEANDUPDATE:m({
-    text: { value: _('R|CU|user/someId|1|{"name":"bob"}+') },
+    text: { value: _('R|CU|user/someId|1|{"name":"bob"}|{}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDUPDATE.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.JSON,
       name: 'user/someId',
       version: 1,
       data: '{"name":"bob"}',
@@ -507,7 +480,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDUPDATE.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.JSON,
       name: 'user/someId',
       version: 1,
       data: '{"name":"bob"}',
@@ -515,11 +487,10 @@ export const RECORD_MESSAGES = {
     }    
   }),
   CREATEANDPATCH:m({
-    text: { value: _('R|CU|user/someId|1|path|Sdata+') },
+    text: { value: _('R|CU|user/someId|1|path|Sdata|{}+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDPATCH.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
       name: 'user/someId',
       version: 1,
       path: 'path',
@@ -532,7 +503,6 @@ export const RECORD_MESSAGES = {
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.CREATEANDPATCH.BYTE,
-      dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM,
       name: 'user/someId',
       version: 1,
       path: 'path',
@@ -768,7 +738,7 @@ export const RPC_MESSAGES = {
     }
   }),
   ACCEPT_TIMEOUT: m({
-    text: { parse: false, value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
+    text: { parse: false, value: _('P|E|ACCEPT_TIMEOUT|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.ACCEPT_TIMEOUT.BYTE,
@@ -790,15 +760,13 @@ extendWithGenericMessages(TOPIC.RPC.BYTE, PA, RPC_MESSAGES)
 extendWithPermissionErrorMessages(TOPIC.RPC.BYTE, PA, RPC_MESSAGES)
 
 export const EVENT_MESSAGES = {
-
   EMIT: m({
     text: { value: _('E|EVT|someEvent|Sdata+') },
     message: {
       topic: TOPIC.EVENT.BYTE,
       action: EA.EMIT.BYTE,
       name: 'someEvent',
-      data: 'Sdata',
-      dataEncoding: PAYLOAD_ENCODING.DEEPSTREAM
+      data: 'Sdata'
     }
   })
 }
@@ -809,16 +777,16 @@ extendWithListenMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 
 export const PRESENCE_MESSAGES = {
    SUBSCRIBE: m({
-    text: { value: _('U|S|["alan","john"]+') },
+    text: { value: _('U|S|1234|["alan","john"]+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.SUBSCRIBE.BYTE,
-      name: UA.SUBSCRIBE.BYTE.toString(),
-      data: '["alan","john"]'
+      correlationId: '1234',
+      name: '["alan","john"]'
     }
   }),
   SUBSCRIBE_ACK: m({
-    text: { value: _('U|A|S|alan+') },
+    text: { parse: false, value: _('U|A|S|alan+') },
     message: {
       isAck: true,
       topic: TOPIC.PRESENCE.BYTE,
@@ -827,12 +795,12 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   UNSUBSCRIBE: m({
-    text: { value: _('U|US|["alan","john"]+') },
+    text: { value: _('U|US|1234|["alan","john"]+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.UNSUBSCRIBE.BYTE,
-      name: UA.UNSUBSCRIBE.BYTE.toString(),
-      data: '["alan","john"]'
+      correlationId: '1234',
+      name: '["alan","john"]'
     }
   }),
   UNSUBSCRIBE_ACK: m({
@@ -847,20 +815,20 @@ export const PRESENCE_MESSAGES = {
   MULTIPLE_SUBSCRIPTIONS: {},
   NOT_SUBSCRIBED: {},
   QUERY_ALL: m({
-    text: { parse: false, value: _('U|Q|Q+') },
+    text: { value: _('U|Q|Q+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL.BYTE,
-      name: UA.QUERY_ALL.BYTE.toString()
+      name: 'Q'
     }
   }),
   QUERY_ALL_RESPONSE: m({
-    text: { parse: false, value: _('U|Q|["alan","sarah"]+') },
+    text: { parse: false, value: _('U|Q|alan|sarah+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL_RESPONSE.BYTE,
       name: UA.QUERY_ALL_RESPONSE.BYTE,
-      data: '["alan","sarah"]'
+      parsedData: ["alan","sarah"]
     }
   }),
   QUERY: m({
@@ -868,9 +836,8 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY.BYTE,
-      name: UA.QUERY.BYTE,
-      correlationId: '1234',
-      data: '["alan"]'
+      name: '["alan"]',
+      correlationId: '1234'
     }
   }),
   QUERY_RESPONSE: m({

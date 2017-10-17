@@ -11,7 +11,8 @@ import {
   DEEPSTREAM_TYPES as TYPES,
   PAYLOAD_ENCODING,
   TOPIC_TEXT_TO_BYTE,
-  ACTIONS_TEXT_TO_BYTE
+  ACTIONS_TEXT_TO_BYTE,
+  ACTIONS_BYTE_TO_PAYLOAD as ABP
 } from './constants'
 
 /**
@@ -116,36 +117,18 @@ export const parse = (rawMessage) => {
           action = RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE
         }
       } else if (
-        action === RA.SUBSCRIBECREATEANDREAD.BYTE ||
         action === RA.CREATEANDUPDATE.BYTE ||
         action === RA.UPDATE.BYTE ||
         action === RA.PATCH.BYTE
       ) {
-        if (
-          action === RA.UPDATE.BYTE ||
-          action === RA.PATCH.BYTE ||
-          action === RA.CREATEANDUPDATE.BYTE
-        ) {
-          isWriteAck = false
-          version = parts[index++] * 1
+        isWriteAck = (parts[parts.length - 1] === writeConfig)
+        version = parts[index++] * 1
+        
+        if (action === RA.CREATEANDUPDATE.BYTE && parts.length === 7) {
+          action = RA.CREATEANDPATCH.BYTE
         }
-        if (parts[parts.length - 1] === writeConfig) {
-          isWriteAck = true
-        }
-        if (
-          (action === RA.CREATEANDUPDATE.BYTE && parts.length === 6) ||
-          action === RA.UPDATE.BYTE
-        ) {
-          dataEncoding = PAYLOAD_ENCODING.JSON
-        }
-        else if (
-          (action === RA.CREATEANDUPDATE.BYTE && parts.length === 7) ||
-          action === RA.PATCH.BYTE
-        ) {
-          if (action === RA.CREATEANDUPDATE.BYTE) {
-            action = RA.CREATEANDPATCH.BYTE
-          }
-          dataEncoding = PAYLOAD_ENCODING.DEEPSTREAM
+
+        if (action === RA.CREATEANDPATCH.BYTE || action === RA.PATCH.BYTE) {
           path = parts[index++]    
         }
 
@@ -181,7 +164,6 @@ export const parse = (rawMessage) => {
       }
       else if (action === EA.EMIT.BYTE) {
         data = parts[index++]
-        dataEncoding = PAYLOAD_ENCODING.DEEPSTREAM
       }
     /************************
     ***  RPC
@@ -202,7 +184,6 @@ export const parse = (rawMessage) => {
       }
       if (action === PA.RESPONSE.BYTE || action === PA.REQUEST.BYTE) {
         data = parts[index++]
-        dataEncoding = PAYLOAD_ENCODING.DEEPSTREAM
       }
     }
     /************************
@@ -217,7 +198,7 @@ export const parse = (rawMessage) => {
         }
       }
       else if (action === UA.SUBSCRIBE.BYTE || action === UA.UNSUBSCRIBE.BYTE) {
-        if (parts.length === 4) {
+        if (parts.length === 4 && !isAck) {
           correlationId = parts[index++]
         }
       }
@@ -232,7 +213,6 @@ export const parse = (rawMessage) => {
       }
       else if (action === CA.CHALLENGE_RESPONSE.BYTE || action === CA.REDIRECT.BYTE || action === CA.REJECTION.BYTE) {
         data = parts[index++]
-        dataEncoding = PAYLOAD_ENCODING.JSON
       }
       /************************
       ***  Authentication
@@ -252,14 +232,12 @@ export const parse = (rawMessage) => {
       if (action === AA.AUTH_SUCCESSFUL.BYTE) {
         isAck = false
         data = rawAction
-        dataEncoding = PAYLOAD_ENCODING.JSON
       }
       else if (
         action === AA.REQUEST.BYTE ||
         action === AA.AUTH_UNSUCCESSFUL.BYTE
       ) {
         data = parts[index++]
-        dataEncoding = PAYLOAD_ENCODING.JSON
       }
     }
 
@@ -293,26 +271,21 @@ export const parseData = (message) => {
     return true
   }
 
-  if (message.dataEncoding === PAYLOAD_ENCODING.JSON) {
-    const res = parseJSON(message.data)
-    if (res.error) {
-      return res.error
-    }
-    message.parsedData = res.value
-    return true
-  } else if (message.dataEncoding === PAYLOAD_ENCODING.DEEPSTREAM) {
+  if (ABP[message.topic][message.action] === PAYLOAD_ENCODING.DEEPSTREAM) {
     const parsedData = convertTyped(message.data)
     if (parsedData instanceof Error) {
       return parsedData
     }
     message.parsedData = parsedData
     return true
-  } else if (typeof message.dataEncoding === 'undefined') {
-    message.parsedData = message.data
+  } else {
+    const res = parseJSON(message.data)
+    if (res.error) {
+      return res.error
+    }
+    message.parsedData = res.value
     return true
   }
-
-  return new Error('unknown data encoding')
 }
 
 /**

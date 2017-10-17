@@ -5,7 +5,7 @@ import {
   ACTIONS as constants
 } from '../../../src/constants'
 
-xdescribe('message parser', () => {
+describe('message parser', () => {
   for (let topic in MESSAGES) {
     for (let authAction in MESSAGES[topic]) {
       if (!MESSAGES[topic][authAction] || MESSAGES[topic][authAction].text === undefined) {
