@@ -37,7 +37,10 @@ function m (data) {
 function extendWithGenericMessages (topic, actions, messages) {
   Object.assign(messages, {
     ERROR: m({
-      text: { value: _(`${TBT[topic]}|E|RANDOM_ERROR+`) },
+      text: { 
+        parse: false, 
+        value: _(`${TBT[topic]}|E|RANDOM_ERROR+`) 
+      },
       message: {
         isAck: false,
         isError: true,
@@ -47,7 +50,10 @@ function extendWithGenericMessages (topic, actions, messages) {
       }
     }),
     INVALID_MESSAGE_DATA: m({
-      text: { value: _(`${TBT[topic]}|E|INVALID_MESSAGE_DATA|name|[invalid+`) },
+      text: { 
+        parse: false, 
+        value: _(`${TBT[topic]}|E|INVALID_MESSAGE_DATA|name|[invalid+`) 
+      },
       message: {
         isAck: false,
         isError: true,
@@ -803,7 +809,7 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.SUBSCRIBE.BYTE,
-      name: UA.SUBSCRIBE.BYTE,
+      name: UA.SUBSCRIBE.BYTE.toString(),
       data: '["alan","john"]'
     }
   }),
@@ -821,7 +827,7 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.UNSUBSCRIBE.BYTE,
-      name: UA.UNSUBSCRIBE.BYTE,
+      name: UA.UNSUBSCRIBE.BYTE.toString(),
       data: '["alan","john"]'
     }
   }),
@@ -839,7 +845,7 @@ export const PRESENCE_MESSAGES = {
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL.BYTE,
-      name: 'Q'
+      name: UA.QUERY_ALL.BYTE.toString()
     }
   }),
   QUERY_ALL_RESPONSE: m({
@@ -888,7 +894,10 @@ export const PRESENCE_MESSAGES = {
     }
   }),
   INVALID_PRESENCE_USERS: m({
-    text: { value: _('U|E|INVALID_PRESENCE_USERS|username+') },
+    text: { 
+      parse: false,
+      value: _('U|E|INVALID_PRESENCE_USERS|username+') 
+    },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.INVALID_PRESENCE_USERS.BYTE,

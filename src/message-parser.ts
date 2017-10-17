@@ -223,7 +223,7 @@ export const parse = (rawMessage) => {
         correlationId = parts[index++]
       }
       if (isAck || action === UA.QUERY.BYTE || action === UA.PRESENCE_JOIN.BYTE || action === UA.PRESENCE_LEAVE.BYTE) {
-        name = parts[index++]
+        name = parts[index++].toString()
       } else {
         name = action.toString()
       }
