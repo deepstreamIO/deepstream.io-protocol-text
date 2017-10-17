@@ -103,7 +103,6 @@ export const parse = (rawMessage) => {
     *************************/
     if (topic === TOPIC.RECORD.BYTE) {
       name = parts[index++]
-      path = null
       if (isError) {
         isError = false
         if (rawAction === 'VERSION_EXISTS') {
@@ -283,8 +282,7 @@ export const parse = (rawMessage) => {
       path,
       version,
       // parsedData: null,
-      isWriteAck,
-      raw: rawMessage
+      isWriteAck
     })))
   }
   return parsedMessages

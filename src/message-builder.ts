@@ -30,6 +30,7 @@ const listen = (msg, event, isAck) => `${TBT[msg.topic]}${y}${isAck? A : '' }L${
 const unlisten = (msg, event, isAck) => `${TBT[msg.topic]}${y}${isAck? A : '' }UL${y}${msg.name}${x}`
 const listenAccept = msg => `${TBT[msg.topic]}${y}LA${y}${msg.name}${y}${msg.subscription}${x}`
 const listenReject = msg => `${TBT[msg.topic]}${y}LR${y}${msg.name}${y}${msg.subscription}${x}`
+const multipleSubscriptions = msg => `${TBT[msg.topic]}${y}E${y}MULTIPLE_SUBSCRIPTIONS${y}${msg.name}${x}`
 
 const BUILDERS = {
   [TOPIC.CONNECTION.BYTE]: {
@@ -63,7 +64,8 @@ const BUILDERS = {
     [EA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE]: subscriptionForPatternFound,
     [EA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE]: subscriptionForPatternRemoved,
     [EA.MESSAGE_DENIED.BYTE]: messageDenied,
-    [EA.NOT_SUBSCRIBED.BYTE]: notSubscribed
+    [EA.NOT_SUBSCRIBED.BYTE]: notSubscribed,
+    [EA.MULTIPLE_SUBSCRIPTIONS.BYTE]: multipleSubscriptions
   },
   [TOPIC.RECORD.BYTE]: {
     [RA.ERROR.BYTE]: genericError,
@@ -103,6 +105,7 @@ const BUILDERS = {
     
     [RA.MESSAGE_DENIED.BYTE]: messageDenied,
     [RA.NOT_SUBSCRIBED.BYTE]: notSubscribed,
+    [RA.MULTIPLE_SUBSCRIPTIONS.BYTE]: multipleSubscriptions,
     
     [RA.HAS.BYTE]: msg => `R${y}H${y}${msg.name}${x}`,
     [RA.HAS_RESPONSE.BYTE]: msg => `R${y}H${y}${msg.name}${y}${msg.parsedData ? 'T' : 'F' }${x}`,
@@ -122,7 +125,8 @@ const BUILDERS = {
     [PA.MULTIPLE_RESPONSE.BYTE]: msg => `P${y}E${y}MULTIPLE_RESPONSE${y}${msg.name}${y}${msg.correlationId}${x}`,
 
     [PA.MESSAGE_DENIED.BYTE]: messageDenied,
-    [PA.NOT_SUBSCRIBED.BYTE]: notSubscribed
+    [PA.NOT_PROVIDED.BYTE]: notSubscribed,
+    [PA.MULTIPLE_PROVIDERS.BYTE]: multipleSubscriptions
   },
   [TOPIC.PRESENCE.BYTE]: {
     [UA.ERROR.BYTE]: genericError,
@@ -136,7 +140,8 @@ const BUILDERS = {
     [UA.PRESENCE_LEAVE.BYTE]: msg => `U${y}PNL${y}${msg.name}${x}`,
 
     [UA.MESSAGE_DENIED.BYTE]: messageDenied,
-    [UA.NOT_SUBSCRIBED.BYTE]: notSubscribed
+    [UA.NOT_SUBSCRIBED.BYTE]: notSubscribed,
+    [UA.MULTIPLE_SUBSCRIPTIONS.BYTE]: multipleSubscriptions
   },
 }
 

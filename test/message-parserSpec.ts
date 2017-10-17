@@ -5,10 +5,10 @@ import {
   ACTIONS as constants
 } from '../../../src/constants'
 
-fdescribe('message parser', () => {
+xdescribe('message parser', () => {
   for (let topic in MESSAGES) {
     for (let authAction in MESSAGES[topic]) {
-      if (!MESSAGES[topic][authAction] || Object.keys(MESSAGES[topic][authAction]).length === 0) {
+      if (!MESSAGES[topic][authAction] || MESSAGES[topic][authAction].text === undefined) {
 		  // it (`parses ${TOPIC[topic]} messages ${authAction} correctly`, () => {
 			 //  pending('Missing message')
 		  // })

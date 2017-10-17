@@ -134,7 +134,7 @@ function extendWithSubscriptionMessages (topic, actions, messages) {
     }
   }),
     MULTIPLE_SUBSCRIPTIONS: m({
-      text: { value: _(`${TBT[topic]}|E|MULTIPLE_SUBSCRIPTIONS|username+`) },
+      text: { parse: false, value: _(`${TBT[topic]}|E|MULTIPLE_SUBSCRIPTIONS|username+`) },
       message: {
         isAck: false,
         isError: true,
@@ -144,7 +144,7 @@ function extendWithSubscriptionMessages (topic, actions, messages) {
       }
     }),
     NOT_SUBSCRIBED: m({
-      text: { value: _(`${TBT[topic]}|E|NOT_SUBSCRIBED|username+`) },
+      text: { parse: false, value: _(`${TBT[topic]}|E|NOT_SUBSCRIBED|username+`) },
       message: {
         isAck: false,
         isError: true,
@@ -161,7 +161,7 @@ function extendWithListenMessages (topic, actions, messages) {
     LISTEN: m({
     text: { value: _(`${TBT[topic]}|L|.*+`) },
     message: {
-      topic: TOPIC.RECORD.BYTE,
+      topic,
       action: actions.LISTEN.BYTE,
       name: '.*'
     }
@@ -375,6 +375,8 @@ export const AUTH_MESSAGES = {
       action: AA.TOO_MANY_AUTH_ATTEMPTS.BYTE
     }
   }),
+  MESSAGE_PERMISSION_ERROR: {},
+  MESSAGE_DENIED: {}
 }
 extendWithGenericMessages(TOPIC.AUTH.BYTE, AA, AUTH_MESSAGES)
 
@@ -727,8 +729,10 @@ export const RPC_MESSAGES = {
       name: 'addValues'
     }
   }),
+  MULTIPLE_PROVIDERS: {},
+  NOT_PROVIDED: {},
   MULTIPLE_RESPONSE: m({
-    text: { value: _('P|E|MULTIPLE_RESPONSE|addValues|1234+') },
+    text: { parse: false, value: _('P|E|MULTIPLE_RESPONSE|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.MULTIPLE_RESPONSE.BYTE,
@@ -737,7 +741,7 @@ export const RPC_MESSAGES = {
     }
   }),
   RESPONSE_TIMEOUT: m({
-    text: { value: _('P|E|RESPONSE_TIMEOUT|addValues|1234+') },
+    text: { parse: false, value: _('P|E|RESPONSE_TIMEOUT|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.RESPONSE_TIMEOUT.BYTE,
@@ -746,7 +750,7 @@ export const RPC_MESSAGES = {
     }
   }),
   INVALID_RPC_CORRELATION_ID: m({
-    text: { value: _('P|E|INVALID_RPC_CORRELATION_ID|addValues|1234+') },
+    text: { parse: false, value: _('P|E|INVALID_RPC_CORRELATION_ID|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.INVALID_RPC_CORRELATION_ID.BYTE,
@@ -755,7 +759,7 @@ export const RPC_MESSAGES = {
     }
   }),
   MULTIPLE_ACCEPT: m({
-    text: { value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
+    text: { parse: false, value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.MULTIPLE_ACCEPT.BYTE,
@@ -764,7 +768,7 @@ export const RPC_MESSAGES = {
     }
   }),
   ACCEPT_TIMEOUT: m({
-    text: { value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
+    text: { parse: false, value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.ACCEPT_TIMEOUT.BYTE,
@@ -773,7 +777,7 @@ export const RPC_MESSAGES = {
     }
   }),
   NO_RPC_PROVIDER: m({
-    text: { value: _('P|E|NO_RPC_PROVIDER|addValues|1234+') },
+    text: { parse: false, value: _('P|E|NO_RPC_PROVIDER|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.NO_RPC_PROVIDER.BYTE,
@@ -840,6 +844,8 @@ export const PRESENCE_MESSAGES = {
       name: 'alan'
     }
   }),
+  MULTIPLE_SUBSCRIPTIONS: {},
+  NOT_SUBSCRIBED: {},
   QUERY_ALL: m({
     text: { parse: false, value: _('U|Q|Q+') },
     message: {

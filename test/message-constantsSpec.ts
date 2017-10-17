@@ -8,7 +8,7 @@ import {
   ACTIONS as constants
 } from '../../../src/constants'
 
-fdescribe('protocol', () => {
+describe('protocol', () => {
   for (const topic in constants) {
     for (const action in constants[topic]) {
       if (isNaN(Number(action))) {
