@@ -1,18 +1,18 @@
 import {
-  TOPIC,
-  CONNECTION_ACTIONS as CA,
+  ACTIONS_BYTE_TO_PAYLOAD as ABP,
+  ACTIONS_TEXT_TO_BYTE,
   AUTH_ACTIONS as AA,
+  CONNECTION_ACTIONS as CA,
+  DEEPSTREAM_TYPES as TYPES,
   EVENT_ACTIONS as EA,
-  RECORD_ACTIONS as RA,
-  RPC_ACTIONS as PA,
-  PRESENCE_ACTIONS as UA,
   MESSAGE_PART_SEPERATOR,
   MESSAGE_SEPERATOR,
-  DEEPSTREAM_TYPES as TYPES,
   PAYLOAD_ENCODING,
+  PRESENCE_ACTIONS as UA,
+  RECORD_ACTIONS as RA,
+  RPC_ACTIONS as PA,
+  TOPIC,
   TOPIC_TEXT_TO_BYTE,
-  ACTIONS_TEXT_TO_BYTE,
-  ACTIONS_BYTE_TO_PAYLOAD as ABP
 } from './constants'
 
 /**
@@ -23,14 +23,14 @@ import {
  * inline since it incurs a massive performance hit
  * in most versions of node.
  */
-function parseJSON(text, reviver?): any {
+function parseJSON (text, reviver?): any {
   try {
     return {
-      value: JSON.parse(text, reviver)
+      value: JSON.parse(text, reviver),
     }
   } catch (err) {
     return {
-      error: err
+      error: err,
     }
   }
 }
@@ -63,8 +63,6 @@ export const parse = (rawMessage) => {
     let version
     let path
     let isWriteAck
-
-    let dataEncoding
 
     let subscription
     let correlationId
@@ -99,10 +97,10 @@ export const parse = (rawMessage) => {
         continue
       }
     }
+    if (topic === TOPIC.RECORD.BYTE) {
     /************************
     ***  RECORD
     *************************/
-    if (topic === TOPIC.RECORD.BYTE) {
       name = parts[index++]
       if (isError) {
         isError = false
@@ -123,13 +121,13 @@ export const parse = (rawMessage) => {
       ) {
         isWriteAck = (parts[parts.length - 1] === writeConfig)
         version = parts[index++] * 1
-        
+
         if (action === RA.CREATEANDUPDATE.BYTE && parts.length === 7) {
           action = RA.CREATEANDPATCH.BYTE
         }
 
         if (action === RA.CREATEANDPATCH.BYTE || action === RA.PATCH.BYTE) {
-          path = parts[index++]    
+          path = parts[index++]
         }
 
         if (parts.length - index === 2) {
@@ -149,10 +147,10 @@ export const parse = (rawMessage) => {
           action = RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE
         }
       }
+    } else if (topic === TOPIC.EVENT.BYTE) {
     /************************
     ***  EVENT
     *************************/
-    } else if (topic === TOPIC.EVENT.BYTE) {
       name = parts[index++]
       if (
         action === EA.LISTEN_ACCEPT.BYTE ||
@@ -161,14 +159,13 @@ export const parse = (rawMessage) => {
         action === EA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE
       ) {
         subscription = parts[index++]
-      }
-      else if (action === EA.EMIT.BYTE) {
+      } else if (action === EA.EMIT.BYTE) {
         data = parts[index++]
       }
+    } else if (topic === TOPIC.RPC.BYTE) {
     /************************
     ***  RPC
     *************************/
-    } else if (topic === TOPIC.RPC.BYTE) {
       name = parts[index++]
       if (isAck && action === PA.REQUEST.BYTE) {
         isAck = false
@@ -185,11 +182,10 @@ export const parse = (rawMessage) => {
       if (action === PA.RESPONSE.BYTE || action === PA.REQUEST.BYTE) {
         data = parts[index++]
       }
-    }
+    } else if (topic === TOPIC.PRESENCE.BYTE) {
     /************************
     ***  Presence
     *************************/
-    else if (topic === TOPIC.PRESENCE.BYTE) {
       if (action === UA.QUERY.BYTE) {
         if (parts.length === 3) {
           action = UA.QUERY_ALL.BYTE
@@ -197,28 +193,26 @@ export const parse = (rawMessage) => {
           correlationId = parts[index++]
           data = parts[index++]
         }
-      }
-      else if (action === UA.SUBSCRIBE.BYTE || action === UA.UNSUBSCRIBE.BYTE) {
+      } else if (action === UA.SUBSCRIBE.BYTE || action === UA.UNSUBSCRIBE.BYTE) {
         if (parts.length === 4 && !isAck) {
           correlationId = parts[index++]
         }
         data = parts[index++]
       }
+    } else if (topic === TOPIC.CONNECTION.BYTE) {
       /************************
       ***  Connection
       *************************/
-    } else if (topic === TOPIC.CONNECTION.BYTE) {
       if (isAck) {
         action = CA.ACCEPT.BYTE
         isAck = false
-      }
-      else if (action === CA.CHALLENGE_RESPONSE.BYTE || action === CA.REDIRECT.BYTE || action === CA.REJECTION.BYTE) {
+      } else if (action === CA.CHALLENGE_RESPONSE.BYTE || action === CA.REDIRECT.BYTE || action === CA.REJECTION.BYTE) {
         data = parts[index++]
       }
+    } else if (topic === TOPIC.AUTH.BYTE) {
       /************************
       ***  Authentication
       *************************/
-    } else if (topic === TOPIC.AUTH.BYTE) {
       if (isAck) {
         action = AA.AUTH_SUCCESSFUL.BYTE
       } else if (isError) {
@@ -233,11 +227,7 @@ export const parse = (rawMessage) => {
       if (action === AA.AUTH_SUCCESSFUL.BYTE) {
         isAck = false
         data = rawAction
-      }
-      else if (
-        action === AA.REQUEST.BYTE ||
-        action === AA.AUTH_UNSUCCESSFUL.BYTE
-      ) {
+      } else if (action === AA.REQUEST.BYTE || action === AA.AUTH_UNSUCCESSFUL.BYTE) {
         data = parts[index++]
       }
     }
@@ -249,7 +239,6 @@ export const parse = (rawMessage) => {
       action,
       name,
       data,
-      dataEncoding,
 
       // rpc / presence query
       correlationId,
@@ -261,7 +250,7 @@ export const parse = (rawMessage) => {
       path,
       version,
       // parsedData: null,
-      isWriteAck
+      isWriteAck,
     })))
   }
   return parsedMessages

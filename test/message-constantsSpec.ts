@@ -1,12 +1,12 @@
-import { MESSAGES } from '../src/messages'
-import { 
-  ACTIONS as protocol,
-  ACTIONS_BYTE_TO_KEY as ATB  
-} from '../src/constants'
-import { 
+import {
+  ACTIONS as constants,
   TOPIC,
-  ACTIONS as constants
 } from '../../../src/constants'
+import {
+  ACTIONS as protocol,
+  ACTIONS_BYTE_TO_KEY as ATB,
+} from '../src/constants'
+import { MESSAGES } from '../src/messages'
 
 describe('protocol', () => {
   for (const topic in constants) {
