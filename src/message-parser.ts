@@ -203,6 +203,9 @@ export const parse = (rawMessage) => {
       /************************
       ***  Connection
       *************************/
+      if (action === CA.PONG.BYTE) {
+        continue
+      }
       if (isAck) {
         action = CA.ACCEPT.BYTE
         isAck = false
