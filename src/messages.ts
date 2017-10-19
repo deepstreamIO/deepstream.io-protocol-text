@@ -256,7 +256,7 @@ export const CONNECTION_MESSAGES = {
     },
   }),
   PONG: m({
-    text: { value: _('C|PO+') },
+    text: { parse: false, value: _('C|PO+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PONG.BYTE,
