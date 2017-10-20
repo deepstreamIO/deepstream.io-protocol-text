@@ -37,7 +37,7 @@ function parseJSON (text, reviver?): any {
 
 const writeConfig = JSON.stringify({ writeSuccess: true })
 
-export const parse = (rawMessage) => {
+export const parse = rawMessage => {
   const parsedMessages: Array<any> = []
   const rawMessages = rawMessage.split(MESSAGE_SEPERATOR)
 
@@ -259,7 +259,7 @@ export const parse = (rawMessage) => {
   return parsedMessages
 }
 
-export const parseData = (message) => {
+export const parseData = message => {
   if (message.parsedData || !message.data) {
     return true
   }

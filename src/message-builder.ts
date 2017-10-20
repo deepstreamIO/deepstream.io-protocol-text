@@ -24,42 +24,42 @@ const invalidMessageData = (msg, event) => `${TBT[msg.topic]}${y}E${y}INVALID_ME
 const messagePermissionError = (msg, event) => `${TBT[msg.topic]}${y}E${y}MESSAGE_PERMISSION_ERROR${y}${msg.name}${ABT[msg.topic][msg.action] ? y + ABT[msg.topic][msg.action] : '' }${msg.correlationId ? y + msg.correlationId : '' }${x}`
 const messageDenied = (msg, event) => `${TBT[msg.topic]}${y}E${y}MESSAGE_DENIED${y}${msg.name}${ABT[msg.topic][msg.action] ? y + ABT[msg.topic][msg.action] : '' }${msg.correlationId ? y + msg.correlationId : '' }${x}`
 const notSubscribed = (msg, event) => `${TBT[msg.topic]}${y}E${y}NOT_SUBSCRIBED${y}${msg.name}${x}`
-const invalidAuth = (msg) => `A${y}E${y}INVALID_AUTH_DATA${y}${msg.data ? msg.data : 'U' }${x}`
-const recordUpdate = (msg) => `R${y}U${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
-const recordPatch = (msg) => `R${y}P${y}${msg.name}${y}${msg.version}${y}${msg.path}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
-const subscriptionForPatternFound = (msg) => `${TBT[msg.topic]}${y}SP${y}${msg.name}${y}${msg.subscription}${x}`
-const subscriptionForPatternRemoved = (msg) => `${TBT[msg.topic]}${y}SR${y}${msg.name}${y}${msg.subscription}${x}`
+const invalidAuth = msg => `A${y}E${y}INVALID_AUTH_DATA${y}${msg.data ? msg.data : 'U' }${x}`
+const recordUpdate = msg => `R${y}U${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
+const recordPatch = msg => `R${y}P${y}${msg.name}${y}${msg.version}${y}${msg.path}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
+const subscriptionForPatternFound = msg => `${TBT[msg.topic]}${y}SP${y}${msg.name}${y}${msg.subscription}${x}`
+const subscriptionForPatternRemoved = msg => `${TBT[msg.topic]}${y}SR${y}${msg.name}${y}${msg.subscription}${x}`
 const listen = (msg, event, isAck) => `${TBT[msg.topic]}${y}${isAck ? A : '' }L${y}${msg.name}${x}`
 const unlisten = (msg, event, isAck) => `${TBT[msg.topic]}${y}${isAck ? A : '' }UL${y}${msg.name}${x}`
-const listenAccept = (msg) => `${TBT[msg.topic]}${y}LA${y}${msg.name}${y}${msg.subscription}${x}`
-const listenReject = (msg) => `${TBT[msg.topic]}${y}LR${y}${msg.name}${y}${msg.subscription}${x}`
-const multipleSubscriptions = (msg) => `${TBT[msg.topic]}${y}E${y}MULTIPLE_SUBSCRIPTIONS${y}${msg.name}${x}`
+const listenAccept = msg => `${TBT[msg.topic]}${y}LA${y}${msg.name}${y}${msg.subscription}${x}`
+const listenReject = msg => `${TBT[msg.topic]}${y}LR${y}${msg.name}${y}${msg.subscription}${x}`
+const multipleSubscriptions = msg => `${TBT[msg.topic]}${y}E${y}MULTIPLE_SUBSCRIPTIONS${y}${msg.name}${x}`
 
 const BUILDERS = {
   [TOPIC.CONNECTION.BYTE]: {
     [CA.ERROR.BYTE]: genericError,
-    [CA.CHALLENGE.BYTE]: (msg) => `C${y}CH${x}`,
-    [CA.CHALLENGE_RESPONSE.BYTE]: (msg) => `C${y}CHR${y}${msg.data}${x}`,
-    [CA.ACCEPT.BYTE]: (msg) => `C${y}A${x}`,
-    [CA.REJECTION.BYTE]: (msg) => `C${y}REJ${y}${msg.data}${x}`,
-    [CA.REDIRECT.BYTE]: (msg) => `C${y}RED${y}${msg.data}${x}`,
-    [CA.PING.BYTE]: (msg) => `C${y}PI${x}`,
-    [CA.PONG.BYTE]: (msg) => `C${y}PO${x}`,
-    [CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE]: (msg) => `C${y}E${y}CONNECTION_AUTHENTICATION_TIMEOUT${x}`,
+    [CA.CHALLENGE.BYTE]: msg => `C${y}CH${x}`,
+    [CA.CHALLENGE_RESPONSE.BYTE]: msg => `C${y}CHR${y}${msg.data}${x}`,
+    [CA.ACCEPT.BYTE]: msg => `C${y}A${x}`,
+    [CA.REJECTION.BYTE]: msg => `C${y}REJ${y}${msg.data}${x}`,
+    [CA.REDIRECT.BYTE]: msg => `C${y}RED${y}${msg.data}${x}`,
+    [CA.PING.BYTE]: msg => `C${y}PI${x}`,
+    [CA.PONG.BYTE]: msg => `C${y}PO${x}`,
+    [CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE]: msg => `C${y}E${y}CONNECTION_AUTHENTICATION_TIMEOUT${x}`,
   },
   [TOPIC.AUTH.BYTE]: {
     [AA.ERROR.BYTE]: genericError,
-    [AA.REQUEST.BYTE]: (msg) => `A${y}REQ${y}${msg.data}${x}`,
-    [AA.AUTH_SUCCESSFUL.BYTE]: (msg) => `A${y}A${msg.data ? y + msg.data : ''}${x}`,
+    [AA.REQUEST.BYTE]: msg => `A${y}REQ${y}${msg.data}${x}`,
+    [AA.AUTH_SUCCESSFUL.BYTE]: msg => `A${y}A${msg.data ? y + msg.data : ''}${x}`,
     [AA.AUTH_UNSUCCESSFUL.BYTE]: invalidAuth,
     [AA.INVALID_MESSAGE_DATA.BYTE]: invalidAuth,
-    [AA.TOO_MANY_AUTH_ATTEMPTS.BYTE]: (msg) => `A${y}E${y}TOO_MANY_AUTH_ATTEMPTS${x}`,
+    [AA.TOO_MANY_AUTH_ATTEMPTS.BYTE]: msg => `A${y}E${y}TOO_MANY_AUTH_ATTEMPTS${x}`,
   },
   [TOPIC.EVENT.BYTE]: {
     [EA.ERROR.BYTE]: genericError,
     [EA.SUBSCRIBE.BYTE]: (msg, event, isAck) => `E${y}${isAck ? A : '' }S${y}${msg.name}${x}`,
     [EA.UNSUBSCRIBE.BYTE]: (msg, event, isAck) => `E${y}${isAck ? A : '' }US${y}${msg.name}${x}`,
-    [EA.EMIT.BYTE]: (msg) => `E${y}EVT${y}${msg.name}${y}${msg.data ? msg.data : 'U'}${x}`,
+    [EA.EMIT.BYTE]: msg => `E${y}EVT${y}${msg.name}${y}${msg.data ? msg.data : 'U'}${x}`,
     [EA.LISTEN.BYTE]: listen,
     [EA.UNLISTEN.BYTE]: unlisten,
     [EA.LISTEN_ACCEPT.BYTE]: listenAccept,
@@ -101,13 +101,13 @@ const BUILDERS = {
     [RA.LISTEN_REJECT.BYTE]: listenReject,
     [RA.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE]: subscriptionForPatternFound,
     [RA.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE]: subscriptionForPatternRemoved,
-    [RA.SUBSCRIPTION_HAS_PROVIDER.BYTE]: (msg) => `R${y}SH${y}${msg.name}${y}T${x}`,
-    [RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE]: (msg) => `R${y}SH${y}${msg.name}${y}F${x}`,
+    [RA.SUBSCRIPTION_HAS_PROVIDER.BYTE]: msg => `R${y}SH${y}${msg.name}${y}T${x}`,
+    [RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE]: msg => `R${y}SH${y}${msg.name}${y}F${x}`,
 
-    [RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE]: (msg) => `R${y}E${y}STORAGE_RETRIEVAL_TIMEOUT${y}${msg.name}${x}`,
-    [RA.CACHE_RETRIEVAL_TIMEOUT.BYTE]: (msg) => `R${y}E${y}CACHE_RETRIEVAL_TIMEOUT${y}${msg.name}${x}`,
-    [RA.VERSION_EXISTS.BYTE]: (msg) => `R${y}E${y}VERSION_EXISTS${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck ? WA : ''}${x}`,
-    [RA.RECORD_NOT_FOUND.BYTE]: (msg) => `R${y}E${y}${ABT[msg.topic][msg.action]}${y}${msg.name}${y}RECORD_NOT_FOUND${x}`,
+    [RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE]: msg => `R${y}E${y}STORAGE_RETRIEVAL_TIMEOUT${y}${msg.name}${x}`,
+    [RA.CACHE_RETRIEVAL_TIMEOUT.BYTE]: msg => `R${y}E${y}CACHE_RETRIEVAL_TIMEOUT${y}${msg.name}${x}`,
+    [RA.VERSION_EXISTS.BYTE]: msg => `R${y}E${y}VERSION_EXISTS${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck ? WA : ''}${x}`,
+    [RA.RECORD_NOT_FOUND.BYTE]: msg => `R${y}E${y}${ABT[msg.topic][msg.action]}${y}${msg.name}${y}RECORD_NOT_FOUND${x}`,
 
     [RA.INVALID_MESSAGE_DATA.BYTE]: invalidMessageData,
     [RA.MESSAGE_DENIED.BYTE]: messageDenied,
@@ -115,24 +115,24 @@ const BUILDERS = {
     [RA.NOT_SUBSCRIBED.BYTE]: notSubscribed,
     [RA.MULTIPLE_SUBSCRIPTIONS.BYTE]: multipleSubscriptions,
 
-    [RA.HAS.BYTE]: (msg) => `R${y}H${y}${msg.name}${x}`,
-    [RA.HAS_RESPONSE.BYTE]: (msg) => `R${y}H${y}${msg.name}${y}${msg.parsedData ? 'T' : 'F' }${x}`,
+    [RA.HAS.BYTE]: msg => `R${y}H${y}${msg.name}${x}`,
+    [RA.HAS_RESPONSE.BYTE]: msg => `R${y}H${y}${msg.name}${y}${msg.parsedData ? 'T' : 'F' }${x}`,
   },
   [TOPIC.RPC.BYTE]: {
     [PA.ERROR.BYTE]: genericError,
     [PA.PROVIDE.BYTE]: (msg, event, isAck) => `P${y}${isAck ? A : '' }S${y}${msg.name}${x}`,
     [PA.UNPROVIDE.BYTE]: (msg, event, isAck) => `P${y}${isAck ? A : '' }US${y}${msg.name}${x}`,
-    [PA.REQUEST.BYTE]: (msg) => `P${y}REQ${y}${msg.name}${y}${msg.correlationId}${y}${msg.data}${x}`,
-    [PA.RESPONSE.BYTE]: (msg) => `P${y}RES${y}${msg.name}${y}${msg.correlationId}${y}${msg.data}${x}`,
-    [PA.REQUEST_ERROR.BYTE]: (msg) => `P${y}E${y}${msg.data}${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.REJECT.BYTE]: (msg) => `P${y}REJ${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.ACCEPT.BYTE]: (msg) => `P${y}A${y}REQ${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.NO_RPC_PROVIDER.BYTE]: (msg) => `P${y}E${y}NO_RPC_PROVIDER${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.INVALID_RPC_CORRELATION_ID.BYTE]: (msg) => `P${y}E${y}INVALID_RPC_CORRELATION_ID${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.RESPONSE_TIMEOUT.BYTE]: (msg) => `P${y}E${y}RESPONSE_TIMEOUT${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.MULTIPLE_RESPONSE.BYTE]: (msg) => `P${y}E${y}MULTIPLE_RESPONSE${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.MULTIPLE_ACCEPT.BYTE]: (msg) => `P${y}E${y}MULTIPLE_ACCEPT${y}${msg.name}${y}${msg.correlationId}${x}`,
-    [PA.ACCEPT_TIMEOUT.BYTE]: (msg) => `P${y}E${y}ACCEPT_TIMEOUT${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.REQUEST.BYTE]: msg => `P${y}REQ${y}${msg.name}${y}${msg.correlationId}${y}${msg.data}${x}`,
+    [PA.RESPONSE.BYTE]: msg => `P${y}RES${y}${msg.name}${y}${msg.correlationId}${y}${msg.data}${x}`,
+    [PA.REQUEST_ERROR.BYTE]: msg => `P${y}E${y}${msg.data}${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.REJECT.BYTE]: msg => `P${y}REJ${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.ACCEPT.BYTE]: msg => `P${y}A${y}REQ${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.NO_RPC_PROVIDER.BYTE]: msg => `P${y}E${y}NO_RPC_PROVIDER${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.INVALID_RPC_CORRELATION_ID.BYTE]: msg => `P${y}E${y}INVALID_RPC_CORRELATION_ID${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.RESPONSE_TIMEOUT.BYTE]: msg => `P${y}E${y}RESPONSE_TIMEOUT${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.MULTIPLE_RESPONSE.BYTE]: msg => `P${y}E${y}MULTIPLE_RESPONSE${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.MULTIPLE_ACCEPT.BYTE]: msg => `P${y}E${y}MULTIPLE_ACCEPT${y}${msg.name}${y}${msg.correlationId}${x}`,
+    [PA.ACCEPT_TIMEOUT.BYTE]: msg => `P${y}E${y}ACCEPT_TIMEOUT${y}${msg.name}${y}${msg.correlationId}${x}`,
 
     [PA.INVALID_MESSAGE_DATA.BYTE]: invalidMessageData,
     [PA.MESSAGE_DENIED.BYTE]: messageDenied,
@@ -144,14 +144,14 @@ const BUILDERS = {
     [UA.ERROR.BYTE]: genericError,
     [UA.SUBSCRIBE.BYTE]: (msg, event, isAck) => `U${y}${isAck ? A : '' }S${y}${msg.correlationId ? msg.correlationId + y : '' }${msg.name ? msg.name : msg.data}${x}`,
     [UA.UNSUBSCRIBE.BYTE]: (msg, event, isAck)  => `U${y}${isAck ? A : '' }US${y}${msg.correlationId ? msg.correlationId + y : '' }${msg.name ? msg.name : msg.data}${x}`,
-    [UA.QUERY.BYTE]: (msg) => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
-    [UA.QUERY_RESPONSE.BYTE]: (msg) => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
-    [UA.QUERY_ALL.BYTE]: (msg) => `U${y}Q${y}Q${x}`,
-    [UA.QUERY_ALL_RESPONSE.BYTE]: (msg) => `U${y}Q${msg.parsedData.length > 0 ? y + msg.parsedData.join(y) : '' }${x}`,
-    [UA.PRESENCE_JOIN.BYTE]: (msg) => `U${y}PNJ${y}${msg.name}${x}`,
-    [UA.PRESENCE_LEAVE.BYTE]: (msg) => `U${y}PNL${y}${msg.name}${x}`,
+    [UA.QUERY.BYTE]: msg => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
+    [UA.QUERY_RESPONSE.BYTE]: msg => `U${y}Q${y}${msg.correlationId}${y}${msg.data}${x}`,
+    [UA.QUERY_ALL.BYTE]: msg => `U${y}Q${y}Q${x}`,
+    [UA.QUERY_ALL_RESPONSE.BYTE]: msg => `U${y}Q${msg.parsedData.length > 0 ? y + msg.parsedData.join(y) : '' }${x}`,
+    [UA.PRESENCE_JOIN.BYTE]: msg => `U${y}PNJ${y}${msg.name}${x}`,
+    [UA.PRESENCE_LEAVE.BYTE]: msg => `U${y}PNL${y}${msg.name}${x}`,
 
-    [UA.INVALID_PRESENCE_USERS.BYTE]: (msg) => `U${y}E${y}INVALID_PRESENCE_USERS${y}${msg.data}${x}`,
+    [UA.INVALID_PRESENCE_USERS.BYTE]: msg => `U${y}E${y}INVALID_PRESENCE_USERS${y}${msg.data}${x}`,
 
     [UA.INVALID_MESSAGE_DATA.BYTE]: invalidMessageData,
     [UA.MESSAGE_DENIED.BYTE]: messageDenied,
