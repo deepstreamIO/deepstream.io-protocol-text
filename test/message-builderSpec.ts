@@ -8,18 +8,16 @@ import { MESSAGES } from '../src/messages'
 describe('message builder', () => {
   for (const topic in MESSAGES) {
     for (const authAction in MESSAGES[topic]) {
-      if (!MESSAGES[topic][authAction] || Object.keys(MESSAGES[topic][authAction]).length === 0) {
+      const spec = MESSAGES[topic][authAction]
+      if (!spec || Object.keys(spec).length === 0) {
         // it (`builds ${TOPIC[topic]} messages ${authAction} correctly`, () => {
         //   pending('Missing message')
         // })
-      } else if (MESSAGES[topic][authAction].text.build === true) {
+      } else if (spec.text.build === true) {
         it (`builds ${TOPIC[topic]} messages ${authAction} correctly`, () => {
-          expect(
-            getMessage(
-              MESSAGES[topic][authAction].message,
-              authAction.indexOf('_ACK') > -1,
-            ),
-          ).toEqual(MESSAGES[topic][authAction].text.value)
+          const specCopy = JSON.parse(JSON.stringify(spec.message))
+          const result = getMessage(specCopy, authAction.indexOf('_ACK') > -1)
+          expect(result).toEqual(spec.text.value)
         })
       }
     }

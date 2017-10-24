@@ -1,3 +1,5 @@
+/* tslint:disable:no-bitwise */
+
 import {
   ACTIONS_TEXT_TO_BYTE,
   AUTH_ACTIONS as AA,
@@ -22,7 +24,7 @@ function _ (message) {
     .replace(/\+/g, String.fromCharCode(30))
 }
 
-function m (data) {
+function m (data): MessageSpec {
   data.message = Object.assign({
     isAck: false,
     isError: false,
@@ -32,6 +34,37 @@ function m (data) {
     parse: true,
   }, data.text)
   return data
+}
+
+function binMsg (
+  topicByte: number,
+  actionByte: number,
+  meta: string | object,
+  payload: string | object,
+  fin: boolean = true,
+): Buffer {
+  if (typeof meta === 'object') {
+    meta = JSON.stringify(meta)
+  }
+  if (typeof payload === 'object') {
+    payload = JSON.stringify(payload)
+  }
+  const metaLen = Buffer.byteLength(meta)
+  const payloadLen = Buffer.byteLength(payload)
+  return Buffer.concat([
+    Buffer.from([
+      (fin ? 0x80 : 0x00) | topicByte,
+      actionByte,
+      metaLen >> 16,
+      metaLen >> 8,
+      metaLen,
+      payloadLen >> 16,
+      payloadLen >> 8,
+      payloadLen,
+    ]),
+    Buffer.from(meta, 'utf8'),
+    Buffer.from(payload, 'utf8'),
+  ])
 }
 
 function extendWithGenericMessages (topic, actions, messages) {
@@ -52,7 +85,7 @@ function extendWithPermissionErrorMessages (topic, actions, messages) {
         isAck: false,
         isError: true,
         topic,
-        action: UA.MESSAGE_PERMISSION_ERROR.BYTE,
+        action: actions.MESSAGE_PERMISSION_ERROR.BYTE,
         name: 'username',
       },
     }),
@@ -65,7 +98,7 @@ function extendWithPermissionErrorMessages (topic, actions, messages) {
         isAck: false,
         isError: true,
         topic,
-        action: UA.MESSAGE_DENIED.BYTE,
+        action: actions.MESSAGE_DENIED.BYTE,
         name: 'username',
       },
     }),
@@ -114,7 +147,7 @@ function extendWithSubscriptionMessages (topic, actions, messages) {
         isAck: false,
         isError: true,
         topic,
-        action: UA.MULTIPLE_SUBSCRIPTIONS.BYTE,
+        action: actions.MULTIPLE_SUBSCRIPTIONS.BYTE,
         name: 'username',
       },
     }),
@@ -124,7 +157,7 @@ function extendWithSubscriptionMessages (topic, actions, messages) {
         isAck: false,
         isError: true,
         topic,
-        action: UA.NOT_SUBSCRIBED.BYTE,
+        action: actions.NOT_SUBSCRIBED.BYTE,
         name: 'username',
       },
     }),
@@ -134,75 +167,83 @@ function extendWithSubscriptionMessages (topic, actions, messages) {
 function extendWithListenMessages (topic, actions, messages) {
   Object.assign(messages, {
     LISTEN: m({
-    text: { value: _(`${TBT[topic]}|L|.*+`) },
-    message: {
-      topic,
-      action: actions.LISTEN.BYTE,
-      name: '.*',
-    },
-  }),
-  LISTEN_ACK: m({
-    text: { value: _(`${TBT[topic]}|A|L|.*+`) },
-    message: {
-      isAck: true,
-      topic,
-      action: actions.LISTEN.BYTE,
-      name: '.*',
-    },
-  }),
-  UNLISTEN: m({
-    text: { value: _(`${TBT[topic]}|UL|.*+`) },
-    message: {
-      topic,
-      action: actions.UNLISTEN.BYTE,
-      name: '.*',
-    },
-  }),
-  UNLISTEN_ACK: m({
-    text: { value: _(`${TBT[topic]}|A|UL|.*+`) },
-    message: {
-      isAck: true,
-      topic,
-      action: actions.UNLISTEN.BYTE,
-      name: '.*',
-    },
-  }),
-  SUBSCRIPTION_FOR_PATTERN_FOUND: m({
-    text: { value: _(`${TBT[topic]}|SP|.*|someSubscription+`) },
-    message: {
-      topic,
-      action: actions.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE,
-      name: '.*',
-      subscription: 'someSubscription',
-    },
-  }),
-  SUBSCRIPTION_FOR_PATTERN_REMOVED: m({
-    text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
-    message: {
-      topic,
-      action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
-      name: '.*',
-      subscription: 'someSubscription',
-    },
-  }),
-  LISTEN_ACCEPT: m({
-    text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
-    message: {
-      topic,
-      action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
-      name: '.*',
-      subscription: 'someSubscription',
-    },
-  }),
+      text: { value: _(`${TBT[topic]}|L|.*+`) },
+      message: {
+        topic,
+        action: actions.LISTEN.BYTE,
+        name: '.*',
+      },
+      args: [{ type: 'String', name: 'pattern' }],
+    }),
+    LISTEN_ACK: m({
+      text: { value: _(`${TBT[topic]}|A|L|.*+`) },
+      message: {
+        isAck: true,
+        topic,
+        action: actions.LISTEN.BYTE,
+        name: '.*',
+      },
+      args: [{ type: 'String', name: 'pattern' }],
+    }),
+    UNLISTEN: m({
+      text: { value: _(`${TBT[topic]}|UL|.*+`) },
+      message: {
+        topic,
+        action: actions.UNLISTEN.BYTE,
+        name: '.*',
+      },
+      args: [{ type: 'String', name: 'pattern' }],
+    }),
+    UNLISTEN_ACK: m({
+      text: { value: _(`${TBT[topic]}|A|UL|.*+`) },
+      message: {
+        isAck: true,
+        topic,
+        action: actions.UNLISTEN.BYTE,
+        name: '.*',
+      },
+      args: [{ type: 'String', name: 'pattern' }],
+    }),
+    SUBSCRIPTION_FOR_PATTERN_FOUND: m({
+      text: { value: _(`${TBT[topic]}|SP|.*|someSubscription+`) },
+      message: {
+        topic,
+        action: actions.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE,
+        name: '.*',
+        subscription: 'someSubscription',
+      },
+      args: [
+        { type: 'String', name: 'pattern' },
+        { type: 'String', name: 'subscription' },
+      ],
+    }),
+    SUBSCRIPTION_FOR_PATTERN_REMOVED: m({
+      text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
+      message: {
+        topic,
+        action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+        name: '.*',
+        subscription: 'someSubscription',
+      },
+    }),
+    LISTEN_ACCEPT: m({
+      text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
+      message: {
+        topic,
+        action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+        name: '.*',
+        subscription: 'someSubscription',
+      },
+    }),
     LISTEN_REJECT: m({
-    text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
-    message: {
-      topic,
-      action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
-      name: '.*',
-      subscription: 'someSubscription',
-    },
-  }),
+      text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
+      message: {
+        topic,
+        action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+        name: '.*',
+        subscription: 'someSubscription',
+      },
+    }),
   })
 }
 
@@ -247,13 +288,25 @@ export const PARSER_MESSAGES = {
   },
 }
 
-export const CONNECTION_MESSAGES = {
+interface MessageSpec {
+  text: {
+    value: string
+    build: boolean
+    parse: boolean,
+  }
+  message: Message
+  args: Array<{ type: string, name: string }>
+}
+
+export const CONNECTION_MESSAGES: {[key: string]: MessageSpec} = {
   PING: m({
     text: { value: _('C|PI+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PING.BYTE,
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.PING.BYTE, '', '') },
+    args: [],
   }),
   PONG: m({
     text: { parse: false, value: _('C|PO+') },
@@ -261,6 +314,8 @@ export const CONNECTION_MESSAGES = {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.PONG.BYTE,
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.PONG.BYTE, '', '') },
+    args: [],
   }),
   CHALLENGE: m({
     text: { value: _('C|CH+') },
@@ -268,14 +323,18 @@ export const CONNECTION_MESSAGES = {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CHALLENGE.BYTE,
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.CHALLENGE.BYTE, '', '') },
+    args: [],
   }),
   CHALLENGE_RESPONSE: m({
-    text: { value: _('C|CHR|url+') },
+    text: { value: _('C|CHR|ws://url.io+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CHALLENGE_RESPONSE.BYTE,
-      data: 'url',
+      url: 'ws://url.io',
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.CHALLENGE_RESPONSE.BYTE, { u: 'ws://url.io' }, '') },
+    args: [{ type: 'String', name: 'url'}],
   }),
   ACCEPT: m({
     text: { value: _('C|A+') },
@@ -283,57 +342,66 @@ export const CONNECTION_MESSAGES = {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.ACCEPT.BYTE,
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.ACCEPT.BYTE, '', '') },
+    args: [],
   }),
-  REJECTION: m({
+  REJECT: m({
     text: { value: _('C|REJ|reason+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
-      action: CA.REJECTION.BYTE,
-      data: 'reason',
+      action: CA.REJECT.BYTE,
+      reason: 'reason',
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.REJECT.BYTE, { r: 'reason' }, '') },
+    args: [{ type: 'String', name: 'reason' }],
   }),
   REDIRECT: m({
-    text: { value: _('C|RED|url+') },
+    text: { value: _('C|RED|ws://url.io+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.REDIRECT.BYTE,
-      data: 'url',
+      url: 'ws://url.io',
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.REDIRECT.BYTE, { u: 'ws://url.io' }, '') },
+    args: [{ type: 'String', name: 'url' }],
   }),
-  ERROR: {},
   CONNECTION_AUTHENTICATION_TIMEOUT: m({
     text: { parse: false, value: _('C|E|CONNECTION_AUTHENTICATION_TIMEOUT+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
       action: CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE,
     },
+    urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE, '', '') },
   }),
 }
 
 export const AUTH_MESSAGES = {
   REQUEST: m({
-    text: { value: _('A|REQ|loginData+') },
+    text: { value: _('A|REQ|{"username":"ricardo"}+') },
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.REQUEST.BYTE,
-      data: 'loginData',
+      parsedData: { username: 'ricardo' },
     },
+    urp: { value: binMsg(TOPIC.AUTH.BYTE, AA.REQUEST.BYTE, '', { username: 'ricardo' }) },
   }),
   AUTH_SUCCESSFUL: m({
-    text: { value: _('A|A|clientData+') },
+    text: { value: _('A|A|O{"id":"foobar"}+') },
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.AUTH_SUCCESSFUL.BYTE,
-      data: 'clientData',
+      parsedData: { id: 'foobar' },
     },
+    urp: { value: binMsg(TOPIC.AUTH.BYTE, AA.AUTH_SUCCESSFUL.BYTE, '', { id: 'foobar' }) },
   }),
   AUTH_UNSUCCESSFUL: m({
     text: { value: _('A|E|INVALID_AUTH_DATA|errorMessage+') },
     message: {
       topic: TOPIC.AUTH.BYTE,
       action: AA.AUTH_UNSUCCESSFUL.BYTE,
-      data: 'errorMessage',
+      reason: 'errorMessage',
     },
+    urp: { value: binMsg(TOPIC.AUTH.BYTE, AA.AUTH_UNSUCCESSFUL.BYTE, { r: 'errorMessage' }, '') },
   }),
   TOO_MANY_AUTH_ATTEMPTS: m({
     text: { value: _('A|E|TOO_MANY_AUTH_ATTEMPTS+') },
@@ -341,10 +409,8 @@ export const AUTH_MESSAGES = {
       topic: TOPIC.AUTH.BYTE,
       action: AA.TOO_MANY_AUTH_ATTEMPTS.BYTE,
     },
+    urp: { value: binMsg(TOPIC.AUTH.BYTE, AA.TOO_MANY_AUTH_ATTEMPTS.BYTE, '', '') },
   }),
-  MESSAGE_PERMISSION_ERROR: {},
-  MESSAGE_DENIED: {},
-  ERROR: {},
   INVALID_MESSAGE_DATA: m({
     text: {
       parse: false,
@@ -354,9 +420,10 @@ export const AUTH_MESSAGES = {
       isAck: false,
       isError: true,
       topic: TOPIC.AUTH.BYTE,
-      action: UA.INVALID_MESSAGE_DATA.BYTE,
-      data: '[invalid',
+      action: AA.INVALID_MESSAGE_DATA.BYTE,
+      reason: '[invalid',
     },
+    urp: { value: binMsg(TOPIC.AUTH.BYTE, AA.INVALID_MESSAGE_DATA.BYTE, { r: '[invalid' }, '') },
   }),
 }
 
@@ -368,6 +435,7 @@ export const RECORD_MESSAGES = {
       action: RA.HEAD.BYTE,
       name: 'user/someId',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.HEAD.BYTE, { n: 'user/someId' }, '') },
   }),
   HEAD_RESPONSE: m({
     text: { parse: false, value: _('R|HD|user/someId|12|null+') },
@@ -375,8 +443,9 @@ export const RECORD_MESSAGES = {
       topic: TOPIC.RECORD.BYTE,
       action: RA.HEAD_RESPONSE.BYTE,
       name: 'user/someId',
-      version: '12',
+      version: 12,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.HEAD_RESPONSE.BYTE, { n: 'user/someId', v: 12 }, '') },
   }),
   READ: m({
     text: { value: _('R|R|user/someId+') },
@@ -385,6 +454,7 @@ export const RECORD_MESSAGES = {
       action: RA.READ.BYTE,
       name: 'user/someId',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.READ.BYTE, { n: 'user/someId' }, '') },
   }),
   READ_RESPONSE: m({
     text: { parse: false, value: _('R|R|user/someId|1|{"firstname":"Wolfram"}+') },
@@ -392,9 +462,10 @@ export const RECORD_MESSAGES = {
       topic: TOPIC.RECORD.BYTE,
       action: RA.READ_RESPONSE.BYTE,
       name: 'user/someId',
-      data: '{"firstname":"Wolfram"}',
+      parsedData: {firstname: 'Wolfram'},
       version: 1,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.READ_RESPONSE.BYTE, { n: 'user/someId', v: 1 }, { firstname: 'Wolfram' }) },
   }),
   UPDATE: m({
     text: { parse: false, value: _('R|U|user/someId|1|{"firstname":"Wolfram"}+') },
@@ -403,9 +474,10 @@ export const RECORD_MESSAGES = {
       action: RA.UPDATE.BYTE,
       name: 'user/someId',
       version: 1,
-      data: '{"firstname":"Wolfram"}',
+      parsedData: { firstname: 'Wolfram' },
       isWriteAck: false,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.UPDATE.BYTE, { n: 'user/someId', v: 1 }, { firstname: 'Wolfram' }) },
   }),
   UPDATE_WITH_WRITE_ACK: m({
     text: { value: _('R|U|user/someId|1|{"firstname":"Wolfram"}|{"writeSuccess":true}+') },
@@ -414,9 +486,10 @@ export const RECORD_MESSAGES = {
       action: RA.UPDATE.BYTE,
       name: 'user/someId',
       version: 1,
-      data: '{"firstname":"Wolfram"}',
+      parsedData: { firstname: 'Wolfram' },
       isWriteAck: true,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.UPDATE_WITH_WRITE_ACK.BYTE, { n: 'user/someId', v: 1 }, { firstname: 'Wolfram' }) },
   }),
   PATCH: m({
     text: { value: _('R|P|user/someId|1|path|Sdata+') },
@@ -426,9 +499,10 @@ export const RECORD_MESSAGES = {
       name: 'user/someId',
       path: 'path',
       version: 1,
-      data: 'Sdata',
+      parsedData: 'data',
       isWriteAck: false,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.PATCH.BYTE, { n: 'user/someId', v: 1, p: 'path' }, '"data"') },
   }),
   PATCH_WITH_WRITE_ACK: m({
     text: { value: _('R|P|user/someId|1|path|Sdata|{"writeSuccess":true}+') },
@@ -438,9 +512,10 @@ export const RECORD_MESSAGES = {
       name: 'user/someId',
       path: 'path',
       version: 1,
-      data: 'Sdata',
+      parsedData: 'data',
       isWriteAck: true,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.PATCH_WITH_WRITE_ACK.BYTE, {n: 'user/someId', v: 1, p: 'path'}, '"data"') },
   }),
   ERASE: m({
     text: { parse: false, value: _('R|P|user/someId|1|path|U+') },
@@ -452,6 +527,7 @@ export const RECORD_MESSAGES = {
       version: 1,
       isWriteAck: false,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.ERASE.BYTE, '{"n":"user/someId","v":1,"p":"path"}', '') },
   }),
   ERASE_WITH_WRITE_ACK: m({
     text: { parse: false, value: _('R|P|user/someId|1|path|U|{"writeSuccess":true}+') },
@@ -463,6 +539,7 @@ export const RECORD_MESSAGES = {
       version: 1,
       isWriteAck: true,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.ERASE_WITH_WRITE_ACK.BYTE, '{"n":"user/someId","v":1,"p":"path"}', '') },
   }),
   CREATEANDUPDATE: m({
     text: { value: _('R|CU|user/someId|1|{"name":"bob"}|{}+') },
@@ -471,9 +548,10 @@ export const RECORD_MESSAGES = {
       action: RA.CREATEANDUPDATE.BYTE,
       name: 'user/someId',
       version: 1,
-      data: '{"name":"bob"}',
+      parsedData: { name: 'bob' },
       isWriteAck: false,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.CREATEANDUPDATE.BYTE, '{"n":"user/someId","v":1}', '{"name":"bob"}') },
   }),
   CREATEANDUPDATE_WITH_WRITE_ACK: m({
     text: { value: _('R|CU|user/someId|1|{"name":"bob"}|{"writeSuccess":true}+') },
@@ -482,9 +560,10 @@ export const RECORD_MESSAGES = {
       action: RA.CREATEANDUPDATE.BYTE,
       name: 'user/someId',
       version: 1,
-      data: '{"name":"bob"}',
+      parsedData: { name: 'bob' },
       isWriteAck: true,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.CREATEANDUPDATE_WITH_WRITE_ACK.BYTE, '{"n":"user/someId","v":1}', '{"name":"bob"}') },
   }),
   CREATEANDPATCH: m({
     text: { value: _('R|CU|user/someId|1|path|Sdata|{}+') },
@@ -494,9 +573,10 @@ export const RECORD_MESSAGES = {
       name: 'user/someId',
       version: 1,
       path: 'path',
-      data: 'Sdata',
+      parsedData: 'data',
       isWriteAck: false,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.CREATEANDPATCH.BYTE, { n: 'user/someId', v: 1, p: 'path' }, '"data"') },
   }),
   CREATEANDPATCH_WITH_WRITE_ACK: m({
     text: { value: _('R|CU|user/someId|1|path|Sdata|{"writeSuccess":true}+') },
@@ -506,9 +586,10 @@ export const RECORD_MESSAGES = {
       name: 'user/someId',
       version: 1,
       path: 'path',
-      data: 'Sdata',
+      parsedData: 'data',
       isWriteAck: true,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.CREATEANDPATCH_WITH_WRITE_ACK.BYTE, { n: 'user/someId', v: 1, p: 'path' }, '"data"') },
   }),
   DELETE : m({
     text: { value: _('R|D|user/someId+') },
@@ -517,6 +598,7 @@ export const RECORD_MESSAGES = {
       action: RA.DELETE.BYTE,
       name: 'user/someId',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.DELETE.BYTE, { n: 'user/someId' }, '') },
   }),
   DELETE_ACK : m({
     text: { value: _('R|A|D|user/someId+') },
@@ -526,15 +608,17 @@ export const RECORD_MESSAGES = {
       action: RA.DELETE.BYTE,
       name: 'user/someId',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.DELETE_ACK.BYTE, { n: 'user/someId' }, '') },
   }),
   DELETED : m({
     text: { parse: false, value: _('R|A|D|user/someId+') },
     message: {
-      isAck: true,
+      isAck: false,
       topic: TOPIC.RECORD.BYTE,
       action: RA.DELETED.BYTE,
       name: 'user/someId',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.DELETED.BYTE, { n: 'user/someId' }, '') },
   }),
   SUBSCRIBECREATEANDREAD: m({
     text: { value: _('R|CR|user/someId+') },
@@ -543,6 +627,7 @@ export const RECORD_MESSAGES = {
       action: RA.SUBSCRIBECREATEANDREAD.BYTE,
       name: 'user/someId',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.SUBSCRIBECREATEANDREAD.BYTE, { n: 'user/someId' }, '') },
   }),
   SUBSCRIPTION_HAS_PROVIDER: m({
     text: { value: _('R|SH|someSubscription|T+') },
@@ -551,6 +636,7 @@ export const RECORD_MESSAGES = {
       action: RA.SUBSCRIPTION_HAS_PROVIDER.BYTE,
       name: 'someSubscription',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.SUBSCRIPTION_HAS_PROVIDER.BYTE, { n: 'someSubscription' }, '') },
   }),
   SUBSCRIPTION_HAS_NO_PROVIDER: m({
     text: { value: _('R|SH|someSubscription|F+') },
@@ -559,6 +645,7 @@ export const RECORD_MESSAGES = {
       action: RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE,
       name: 'someSubscription',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE, { n: 'someSubscription' }, '') },
   }),
   WRITE_ACKNOWLEDGEMENT: m({
     text: { parse: false, value: _('R|WA|someSubscription|[-1]|L+') },
@@ -568,6 +655,8 @@ export const RECORD_MESSAGES = {
       name: 'someSubscription',
       parsedData: [ [-1], null ],
     },
+    // FIXME: versions and errors should be in meta, not payload
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.WRITE_ACKNOWLEDGEMENT.BYTE, { n: 'someSubscription' }, [[-1], null]) },
   }),
   VERSION_EXISTS: m({
     text: { value: _('R|E|VERSION_EXISTS|recordName|1|{}+') },
@@ -575,10 +664,10 @@ export const RECORD_MESSAGES = {
       topic: TOPIC.RECORD.BYTE,
       action: RA.VERSION_EXISTS.BYTE,
       name: 'recordName',
-      data: '{}',
+      parsedData: {},
       version: 1,
-      isWriteAck: false,
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.VERSION_EXISTS.BYTE, { n: 'recordName', v: 1 }, {}) },
   }),
   CACHE_RETRIEVAL_TIMEOUT: m({
     text: { value: _('R|E|CACHE_RETRIEVAL_TIMEOUT|recordName+') },
@@ -587,6 +676,7 @@ export const RECORD_MESSAGES = {
       action: RA.CACHE_RETRIEVAL_TIMEOUT.BYTE,
       name: 'recordName',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.CACHE_RETRIEVAL_TIMEOUT.BYTE, { n: 'recordName' }, '') },
   }),
   STORAGE_RETRIEVAL_TIMEOUT: m({
     text: { value: _('R|E|STORAGE_RETRIEVAL_TIMEOUT|recordName+') },
@@ -595,6 +685,7 @@ export const RECORD_MESSAGES = {
       action: RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE,
       name: 'recordName',
     },
+    urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE, { n: 'recordName' }, '') },
   }),
   RECORD_LOAD_ERROR: {},
   RECORD_CREATE_ERROR: {},
@@ -628,13 +719,13 @@ export const RPC_MESSAGES = {
     },
   }),
   REQUEST: m({
-    text: { value: _('P|REQ|addValues|1234|{"val1":1,"val2":2}+') },
+    text: { value: _('P|REQ|addValues|1234|O{"val1":1,"val2":2}+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.REQUEST.BYTE,
       name: 'addValues',
       correlationId: '1234',
-      data: '{"val1":1,"val2":2}',
+      parsedData: { val1: 1, val2: 2 },
     },
   }),
   ACCEPT: m({
@@ -656,13 +747,13 @@ export const RPC_MESSAGES = {
     },
   }),
   RESPONSE: m({
-    text: { value: _('P|RES|addValues|1234|{"val1":1,"val2":2}+') },
+    text: { value: _('P|RES|addValues|1234|O{"val1":1,"val2":2}+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.RESPONSE.BYTE,
       name: 'addValues',
       correlationId: '1234',
-      data: '{"val1":1,"val2":2}',
+      parsedData: { val1: 1, val2: 2 },
     },
   }),
   PROVIDE: m({
@@ -766,8 +857,9 @@ export const EVENT_MESSAGES = {
       topic: TOPIC.EVENT.BYTE,
       action: EA.EMIT.BYTE,
       name: 'someEvent',
-      data: 'Sdata',
+      parsedData: 'data',
     },
+    urp: { value: binMsg(TOPIC.EVENT.BYTE, EA.EMIT.BYTE, { n: 'someEvent' }, '"data"') },
   }),
 }
 extendWithGenericMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
@@ -782,7 +874,7 @@ export const PRESENCE_MESSAGES = {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.SUBSCRIBE.BYTE,
       correlationId: '1234',
-      data: '["alan","john"]',
+      parsedData: ['alan', 'john'],
     },
   }),
   SUBSCRIBE_ACK: m({
@@ -800,7 +892,7 @@ export const PRESENCE_MESSAGES = {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.UNSUBSCRIBE.BYTE,
       correlationId: '1234',
-      data: '["alan","john"]',
+      parsedData: ['alan', 'john'],
     },
   }),
   UNSUBSCRIBE_ACK: m({
@@ -835,7 +927,7 @@ export const PRESENCE_MESSAGES = {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY.BYTE,
       correlationId: '1234',
-      data: '["alan"]',
+      parsedData: ['alan'],
     },
   }),
   QUERY_RESPONSE: m({
@@ -844,7 +936,7 @@ export const PRESENCE_MESSAGES = {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_RESPONSE.BYTE,
       correlationId: '1234',
-      data: '{"alan":true}',
+      parsedData: { alan: true },
     },
   }),
   PRESENCE_JOIN: m({
@@ -878,7 +970,7 @@ export const PRESENCE_MESSAGES = {
 extendWithGenericMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
 extendWithPermissionErrorMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
 
-export const MESSAGES = {
+export const MESSAGES: {[key: number]: {}} = {
   [TOPIC.PARSER.BYTE]: PARSER_MESSAGES,
   [TOPIC.RECORD.BYTE]: RECORD_MESSAGES,
   [TOPIC.RPC.BYTE]: RPC_MESSAGES,

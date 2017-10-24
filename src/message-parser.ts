@@ -64,6 +64,9 @@ export const parse = rawMessage => {
     let path
     let isWriteAck
 
+    let url
+    let reason
+
     let subscription
     let correlationId
 
@@ -108,7 +111,9 @@ export const parse = rawMessage => {
           action = RA.VERSION_EXISTS.BYTE
           version = parts[index++] * 1
           data = parts[index++]
-          isWriteAck = parts.length - index > 1
+          if (parts.length - index > 1) {
+            isWriteAck = true
+          }
         } else if (rawAction === 'CACHE_RETRIEVAL_TIMEOUT') {
           action = RA.CACHE_RETRIEVAL_TIMEOUT.BYTE
         } else if (rawAction === 'STORAGE_RETRIEVAL_TIMEOUT') {
@@ -146,6 +151,8 @@ export const parse = rawMessage => {
         if (parts[index++] === 'F') {
           action = RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE
         }
+      } else if (action === RA.READ_RESPONSE || action === RA.HEAD_RESPONSE) {
+        version = parts[index++] * 1
       }
     } else if (topic === TOPIC.EVENT.BYTE) {
     /************************
@@ -209,8 +216,10 @@ export const parse = rawMessage => {
       if (isAck) {
         action = CA.ACCEPT.BYTE
         isAck = false
-      } else if (action === CA.CHALLENGE_RESPONSE.BYTE || action === CA.REDIRECT.BYTE || action === CA.REJECTION.BYTE) {
-        data = parts[index++]
+      } else if (action === CA.CHALLENGE_RESPONSE.BYTE || action === CA.REDIRECT.BYTE) {
+        url = parts[index++]
+      } else if (action === CA.REJECT.BYTE) {
+        reason = parts[index++]
       }
     } else if (topic === TOPIC.AUTH.BYTE) {
       /************************
@@ -230,8 +239,10 @@ export const parse = rawMessage => {
       if (action === AA.AUTH_SUCCESSFUL.BYTE) {
         isAck = false
         data = rawAction
-      } else if (action === AA.REQUEST.BYTE || action === AA.AUTH_UNSUCCESSFUL.BYTE) {
+      } else if (action === AA.REQUEST.BYTE) {
         data = parts[index++]
+      } else if (action === AA.AUTH_UNSUCCESSFUL.BYTE) {
+        reason = parts[index++]
       }
     }
 
@@ -242,6 +253,10 @@ export const parse = rawMessage => {
       action,
       name,
       data,
+
+      // authentication
+      reason,
+      url,
 
       // rpc / presence query
       correlationId,

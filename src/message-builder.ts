@@ -24,7 +24,7 @@ const invalidMessageData = (msg, event) => `${TBT[msg.topic]}${y}E${y}INVALID_ME
 const messagePermissionError = (msg, event) => `${TBT[msg.topic]}${y}E${y}MESSAGE_PERMISSION_ERROR${y}${msg.name}${ABT[msg.topic][msg.action] ? y + ABT[msg.topic][msg.action] : '' }${msg.correlationId ? y + msg.correlationId : '' }${x}`
 const messageDenied = (msg, event) => `${TBT[msg.topic]}${y}E${y}MESSAGE_DENIED${y}${msg.name}${ABT[msg.topic][msg.action] ? y + ABT[msg.topic][msg.action] : '' }${msg.correlationId ? y + msg.correlationId : '' }${x}`
 const notSubscribed = (msg, event) => `${TBT[msg.topic]}${y}E${y}NOT_SUBSCRIBED${y}${msg.name}${x}`
-const invalidAuth = msg => `A${y}E${y}INVALID_AUTH_DATA${y}${msg.data ? msg.data : 'U' }${x}`
+const invalidAuth = msg => `A${y}E${y}INVALID_AUTH_DATA${y}${msg.reason ? msg.reason : 'U' }${x}`
 const recordUpdate = msg => `R${y}U${y}${msg.name}${y}${msg.version}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
 const recordPatch = msg => `R${y}P${y}${msg.name}${y}${msg.version}${y}${msg.path}${y}${msg.data}${msg.isWriteAck ? WA : '' }${x}`
 const subscriptionForPatternFound = msg => `${TBT[msg.topic]}${y}SP${y}${msg.name}${y}${msg.subscription}${x}`
@@ -39,10 +39,10 @@ const BUILDERS = {
   [TOPIC.CONNECTION.BYTE]: {
     [CA.ERROR.BYTE]: genericError,
     [CA.CHALLENGE.BYTE]: msg => `C${y}CH${x}`,
-    [CA.CHALLENGE_RESPONSE.BYTE]: msg => `C${y}CHR${y}${msg.data}${x}`,
+    [CA.CHALLENGE_RESPONSE.BYTE]: msg => `C${y}CHR${y}${msg.url}${x}`,
     [CA.ACCEPT.BYTE]: msg => `C${y}A${x}`,
-    [CA.REJECTION.BYTE]: msg => `C${y}REJ${y}${msg.data}${x}`,
-    [CA.REDIRECT.BYTE]: msg => `C${y}RED${y}${msg.data}${x}`,
+    [CA.REJECT.BYTE]: msg => `C${y}REJ${y}${msg.reason}${x}`,
+    [CA.REDIRECT.BYTE]: msg => `C${y}RED${y}${msg.url}${x}`,
     [CA.PING.BYTE]: msg => `C${y}PI${x}`,
     [CA.PONG.BYTE]: msg => `C${y}PO${x}`,
     [CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE]: msg => `C${y}E${y}CONNECTION_AUTHENTICATION_TIMEOUT${x}`,
@@ -75,7 +75,7 @@ const BUILDERS = {
   [TOPIC.RECORD.BYTE]: {
     [RA.ERROR.BYTE]: genericError,
     [RA.HEAD.BYTE]: (msg, event) => `R${y}HD${y}${msg.name}${x}`,
-    [RA.HEAD_RESPONSE.BYTE]: (msg, event) => `R${y}HD${y}${msg.name}${y}${msg.version}${y}null${x}`,
+    [RA.HEAD_RESPONSE.BYTE]: (msg, event) => `R${y}HD${y}${msg.name}${y}${msg.version}${x}`,
     [RA.READ.BYTE]: (msg, event) => `R${y}R${y}${msg.name}${x}`,
     [RA.READ_RESPONSE.BYTE]: (msg, event) => `R${y}R${y}${msg.name}${y}${msg.version}${y}${msg.data}${x}`,
     [RA.UPDATE.BYTE]: recordUpdate,
@@ -165,7 +165,7 @@ const BUILDERS = {
  * Creates a deepstream message string, based on the
  * provided parameters
  */
-export const getMessage = (message, isAck): string => {
+export const getMessage = (message, isAck: boolean): string => {
   if (!BUILDERS[message.topic] || !BUILDERS[message.topic][message.action]) {
     console.log(message, isAck)
   }
