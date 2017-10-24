@@ -715,7 +715,7 @@ export const RPC_MESSAGES = {
       action: PA.REQUEST_ERROR.BYTE,
       name: 'addValues',
       correlationId: '1234',
-      data: 'ERROR_MESSAGE',
+      reason: 'ERROR_MESSAGE',
     },
   }),
   REQUEST: m({
