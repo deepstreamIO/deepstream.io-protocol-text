@@ -54,6 +54,7 @@ const BUILDERS = {
     [AA.AUTH_UNSUCCESSFUL.BYTE]: invalidAuth,
     [AA.INVALID_MESSAGE_DATA.BYTE]: invalidAuth,
     [AA.TOO_MANY_AUTH_ATTEMPTS.BYTE]: msg => `A${y}E${y}TOO_MANY_AUTH_ATTEMPTS${x}`,
+    [AA.ALREADY_AUTHENTICATED.BYTE]: msg => `A${y}E${y}ALREADY_AUTHENTICATED${x}`,
   },
   [TOPIC.EVENT.BYTE]: {
     [EA.ERROR.BYTE]: genericError,
