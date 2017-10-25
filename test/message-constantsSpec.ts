@@ -13,11 +13,11 @@ describe('protocol', () => {
     for (const action in constants[topic]) {
       if (isNaN(Number(action))) {
         it (`contains message for ${TOPIC[topic]} with action ${action} in protocol`, () => {
-         expect(MESSAGES[topic][action]).not.toBe(undefined)
+          expect(MESSAGES[topic][action]).toBeDefined()
         })
       } else {
         it (`contains topic ${TOPIC[topic]} with action ${constants[topic][action]} in protocol`, () => {
-          expect(ATB[topic][action]).not.toBe(undefined)
+          expect(ATB[topic][action]).toBeDefined()
         })
       }
     }

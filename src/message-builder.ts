@@ -13,6 +13,7 @@ import {
   RPC_ACTIONS as PA,
   TOPIC,
   TOPIC_BYTE_TO_TEXT as TBT,
+  PARSER_ACTIONS as XA,
 } from './constants'
 
 const WA = y + JSON.stringify({ writeSuccess: true })
@@ -36,6 +37,13 @@ const listenReject = msg => `${TBT[msg.topic]}${y}LR${y}${msg.name}${y}${msg.sub
 const multipleSubscriptions = msg => `${TBT[msg.topic]}${y}E${y}MULTIPLE_SUBSCRIPTIONS${y}${msg.name}${x}`
 
 const BUILDERS = {
+  [TOPIC.PARSER.BYTE]: {
+    [XA.UNKNOWN_TOPIC.BYTE]: msg => `X${y}E${y}UNKNOWN_TOPIC${y}${msg.reason}${x}`,
+    [XA.UNKNOWN_ACTION.BYTE]: msg => `X${y}E${y}UNKNOWN_ACTION${y}${msg.reason}${x}`,
+    [XA.INVALID_MESSAGE.BYTE]: msg => `X${y}E${y}INVALID_MESSAGE${y}${msg.reason}${x}`,
+    [XA.MESSAGE_PARSE_ERROR.BYTE]: msg => `X${y}E${y}MESSAGE_PARSE_ERROR${x}`,
+    [XA.MAXIMUM_MESSAGE_SIZE_EXCEEDED.BYTE]: msg => `X${y}E${y}MAXIMUM_MESSAGE_SIZE_EXCEEDED${x}`,
+  },
   [TOPIC.CONNECTION.BYTE]: {
     [CA.ERROR.BYTE]: genericError,
     [CA.CHALLENGE.BYTE]: msg => `C${y}CH${x}`,
@@ -151,7 +159,7 @@ const BUILDERS = {
     [UA.PRESENCE_JOIN.BYTE]: msg => `U${y}PNJ${y}${msg.name}${x}`,
     [UA.PRESENCE_LEAVE.BYTE]: msg => `U${y}PNL${y}${msg.name}${x}`,
 
-    [UA.INVALID_PRESENCE_USERS.BYTE]: msg => `U${y}E${y}INVALID_PRESENCE_USERS${y}${msg.data}${x}`,
+    [UA.INVALID_PRESENCE_USERS.BYTE]: msg => `U${y}E${y}INVALID_PRESENCE_USERS${y}${msg.reason}${x}`,
 
     [UA.INVALID_MESSAGE_DATA.BYTE]: invalidMessageData,
     [UA.MESSAGE_DENIED.BYTE]: messageDenied,

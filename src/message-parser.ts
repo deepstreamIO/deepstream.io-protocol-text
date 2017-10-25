@@ -1,5 +1,6 @@
 import {
   ACTIONS_BYTE_TO_PAYLOAD as ABP,
+  ACTIONS_BYTES,
   ACTIONS_TEXT_TO_BYTE,
   AUTH_ACTIONS as AA,
   CONNECTION_ACTIONS as CA,
@@ -7,6 +8,7 @@ import {
   EVENT_ACTIONS as EA,
   MESSAGE_PART_SEPERATOR,
   MESSAGE_SEPERATOR,
+  PARSER_ACTIONS as XA,
   PAYLOAD_ENCODING,
   PRESENCE_ACTIONS as UA,
   RECORD_ACTIONS as RA,
@@ -37,7 +39,7 @@ function parseJSON (text, reviver?): any {
 
 const writeConfig = JSON.stringify({ writeSuccess: true })
 
-export const parse = rawMessage => {
+export function parse (rawMessage: string): Array<Message> {
   const parsedMessages: Array<any> = []
   const rawMessages = rawMessage.split(MESSAGE_SEPERATOR)
 
@@ -83,7 +85,12 @@ export const parse = rawMessage => {
       index++
     }
 
-    const A = ACTIONS_TEXT_TO_BYTE[topic]
+    let A
+    if (topic === TOPIC.PARSER.BYTE) {
+      A = ACTIONS_BYTES[topic]
+    } else {
+      A = ACTIONS_TEXT_TO_BYTE[topic]
+    }
     const rawAction = parts[index++]
     let action = A[rawAction]
 
@@ -96,7 +103,7 @@ export const parse = rawMessage => {
       ) {
         // ignore
       } else {
-        console.log('unknown action', parts[index - 1], rawMessages[i])
+        console.log('unknown action', rawAction, rawMessages[i], ACTIONS_TEXT_TO_BYTE)
         continue
       }
     }
@@ -109,7 +116,7 @@ export const parse = rawMessage => {
         isError = false
         if (rawAction === 'VERSION_EXISTS') {
           action = RA.VERSION_EXISTS.BYTE
-          version = parts[index++] * 1
+          version = Number(parts[index++])
           data = parts[index++]
           if (parts.length - index > 1) {
             isWriteAck = true
@@ -125,7 +132,7 @@ export const parse = rawMessage => {
         action === RA.PATCH.BYTE
       ) {
         isWriteAck = (parts[parts.length - 1] === writeConfig)
-        version = parts[index++] * 1
+        version = Number(parts[index++])
 
         if (action === RA.CREATEANDUPDATE.BYTE && parts.length === 7) {
           action = RA.CREATEANDPATCH.BYTE
@@ -152,7 +159,7 @@ export const parse = rawMessage => {
           action = RA.SUBSCRIPTION_HAS_NO_PROVIDER.BYTE
         }
       } else if (action === RA.READ_RESPONSE || action === RA.HEAD_RESPONSE) {
-        version = parts[index++] * 1
+        version = Number(parts[index++])
       }
     } else if (topic === TOPIC.EVENT.BYTE) {
     /************************
@@ -244,6 +251,14 @@ export const parse = rawMessage => {
       } else if (action === AA.AUTH_UNSUCCESSFUL.BYTE) {
         reason = parts[index++]
       }
+    } else if (topic === TOPIC.PARSER.BYTE) {
+      /************************
+      ********  Parser  *******
+      *************************/
+      isError = true
+      if (action === XA.UNKNOWN_TOPIC.BYTE || action === XA.UNKNOWN_ACTION.BYTE) {
+        reason = parts[index++]
+      }
     }
 
     parsedMessages.push(JSON.parse(JSON.stringify({
@@ -274,7 +289,7 @@ export const parse = rawMessage => {
   return parsedMessages
 }
 
-export const parseData = message => {
+export function parseData (message: Message): true | Error {
   if (message.parsedData || !message.data) {
     return true
   }
@@ -300,7 +315,7 @@ export const parseData = message => {
  * Deserializes values created by MessageBuilder.typed to
  * their original format
  */
-export const convertTyped = (value: string): any => {
+export function convertTyped (value: string): any {
   const type = value.charAt(0)
 
   if (type === TYPES.STRING) {

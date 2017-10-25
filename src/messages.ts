@@ -69,12 +69,12 @@ function binMsg (
 
 function extendWithGenericMessages (topic, actions, messages) {
   Object.assign(messages, {
-    ERROR: {},
-    INVALID_MESSAGE_DATA: {},
+    ERROR: null,
+    INVALID_MESSAGE_DATA: null,
   })
 }
 
-function extendWithPermissionErrorMessages (topic, actions, messages) {
+function extendWithPermissionErrorMessages (topic, actions, messages: {[key: string]: MessageSpec | null}) {
   Object.assign(messages, {
     MESSAGE_PERMISSION_ERROR: m({
       text: {
@@ -88,6 +88,14 @@ function extendWithPermissionErrorMessages (topic, actions, messages) {
         action: actions.MESSAGE_PERMISSION_ERROR.BYTE,
         name: 'username',
       },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.MESSAGE_PERMISSION_ERROR.BYTE,
+          { n: 'username' },
+          ''
+        )
+      }
     }),
     MESSAGE_DENIED: m({
       text: {
@@ -101,46 +109,86 @@ function extendWithPermissionErrorMessages (topic, actions, messages) {
         action: actions.MESSAGE_DENIED.BYTE,
         name: 'username',
       },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.MESSAGE_DENIED.BYTE,
+          { n: 'username' },
+          ''
+        )
+      }
     }),
   })
 }
 
 function extendWithSubscriptionMessages (topic, actions, messages) {
-    Object.assign(messages, {
-  SUBSCRIBE: m({
-    text: { value: _(`${TBT[topic]}|S|subscription+`) },
-    message: {
-      topic,
-      action: actions.SUBSCRIBE.BYTE,
-      name: 'subscription',
-    },
-  }),
-  SUBSCRIBE_ACK: m({
-    text: { value: _(`${TBT[topic]}|A|S|subscription+`) },
-    message: {
-      isAck: true,
-      topic,
-      action: actions.SUBSCRIBE.BYTE,
-      name: 'subscription',
-    },
-  }),
-  UNSUBSCRIBE: m({
-    text: { value: _(`${TBT[topic]}|US|subscription+`) },
-    message: {
-      topic,
-      action: actions.UNSUBSCRIBE.BYTE,
-      name: 'subscription',
-    },
-  }),
-  UNSUBSCRIBE_ACK: m({
-    text: { value: _(`${TBT[topic]}|A|US|subscription+`) },
-    message: {
-      isAck: true,
-      topic,
-      action: actions.UNSUBSCRIBE.BYTE,
-      name: 'subscription',
-    },
-  }),
+  Object.assign(messages, {
+    SUBSCRIBE: m({
+      text: { value: _(`${TBT[topic]}|S|subscription+`) },
+      message: {
+        topic,
+        action: actions.SUBSCRIBE.BYTE,
+        name: 'subscription',
+      },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.SUBSCRIBE.BYTE,
+          { n: 'subscription' },
+          ''
+        )
+      }
+    }),
+    SUBSCRIBE_ACK: m({
+      text: { value: _(`${TBT[topic]}|A|S|subscription+`) },
+      message: {
+        isAck: true,
+        topic,
+        action: actions.SUBSCRIBE.BYTE,
+        name: 'subscription',
+      },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.SUBSCRIBE_ACK.BYTE,
+          { n: 'subscription' },
+          ''
+        )
+      }
+    }),
+    UNSUBSCRIBE: m({
+      text: { value: _(`${TBT[topic]}|US|subscription+`) },
+      message: {
+        topic,
+        action: actions.UNSUBSCRIBE.BYTE,
+        name: 'subscription',
+      },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.UNSUBSCRIBE.BYTE,
+          { n: 'subscription' },
+          ''
+        )
+      }
+    }),
+    UNSUBSCRIBE_ACK: m({
+      text: { value: _(`${TBT[topic]}|A|US|subscription+`) },
+      message: {
+        isAck: true,
+        topic,
+        action: actions.UNSUBSCRIBE.BYTE,
+        name: 'subscription',
+      },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.UNSUBSCRIBE_ACK.BYTE,
+          { n: 'subscription' },
+          ''
+        )
+      }
+    }),
     MULTIPLE_SUBSCRIPTIONS: m({
       text: { parse: false, value: _(`${TBT[topic]}|E|MULTIPLE_SUBSCRIPTIONS|username+`) },
       message: {
@@ -150,6 +198,14 @@ function extendWithSubscriptionMessages (topic, actions, messages) {
         action: actions.MULTIPLE_SUBSCRIPTIONS.BYTE,
         name: 'username',
       },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.MULTIPLE_SUBSCRIPTIONS.BYTE,
+          { n: 'username' },
+          ''
+        )
+      }
     }),
     NOT_SUBSCRIBED: m({
       text: { parse: false, value: _(`${TBT[topic]}|E|NOT_SUBSCRIBED|username+`) },
@@ -160,6 +216,14 @@ function extendWithSubscriptionMessages (topic, actions, messages) {
         action: actions.NOT_SUBSCRIBED.BYTE,
         name: 'username',
       },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.NOT_SUBSCRIBED.BYTE,
+          { n: 'username' },
+          ''
+        )
+      }
     }),
   })
 }
@@ -174,6 +238,14 @@ function extendWithListenMessages (topic, actions, messages) {
         name: '.*',
       },
       args: [{ type: 'String', name: 'pattern' }],
+      urp: {
+        value: binMsg(
+          topic,
+          actions.LISTEN.BYTE,
+          { n: '.*' },
+          ''
+        )
+      }
     }),
     LISTEN_ACK: m({
       text: { value: _(`${TBT[topic]}|A|L|.*+`) },
@@ -184,6 +256,14 @@ function extendWithListenMessages (topic, actions, messages) {
         name: '.*',
       },
       args: [{ type: 'String', name: 'pattern' }],
+      urp: {
+        value: binMsg(
+          topic,
+          actions.LISTEN_ACK.BYTE,
+          { n: '.*' },
+          ''
+        )
+      }
     }),
     UNLISTEN: m({
       text: { value: _(`${TBT[topic]}|UL|.*+`) },
@@ -193,6 +273,14 @@ function extendWithListenMessages (topic, actions, messages) {
         name: '.*',
       },
       args: [{ type: 'String', name: 'pattern' }],
+      urp: {
+        value: binMsg(
+          topic,
+          actions.UNLISTEN.BYTE,
+          { n: '.*' },
+          ''
+        )
+      }
     }),
     UNLISTEN_ACK: m({
       text: { value: _(`${TBT[topic]}|A|UL|.*+`) },
@@ -203,6 +291,14 @@ function extendWithListenMessages (topic, actions, messages) {
         name: '.*',
       },
       args: [{ type: 'String', name: 'pattern' }],
+      urp: {
+        value: binMsg(
+          topic,
+          actions.UNLISTEN_ACK.BYTE,
+          { n: '.*' },
+          ''
+        )
+      }
     }),
     SUBSCRIPTION_FOR_PATTERN_FOUND: m({
       text: { value: _(`${TBT[topic]}|SP|.*|someSubscription+`) },
@@ -216,6 +312,14 @@ function extendWithListenMessages (topic, actions, messages) {
         { type: 'String', name: 'pattern' },
         { type: 'String', name: 'subscription' },
       ],
+      urp: {
+        value: binMsg(
+          topic,
+          actions.SUBSCRIPTION_FOR_PATTERN_FOUND.BYTE,
+          { n: '.*', s: 'someSubscription' },
+          ''
+        )
+      }
     }),
     SUBSCRIPTION_FOR_PATTERN_REMOVED: m({
       text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
@@ -225,94 +329,131 @@ function extendWithListenMessages (topic, actions, messages) {
         name: '.*',
         subscription: 'someSubscription',
       },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+          { n: '.*', s: 'someSubscription' },
+          ''
+        )
+      }
     }),
     LISTEN_ACCEPT: m({
-      text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
+      text: { value: _(`${TBT[topic]}|LA|.*|someSubscription+`) },
       message: {
         topic,
-        action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+        action: actions.LISTEN_ACCEPT.BYTE,
         name: '.*',
         subscription: 'someSubscription',
       },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.LISTEN_ACCEPT.BYTE,
+          { n: '.*', s: 'someSubscription' },
+          ''
+        )
+      }
     }),
     LISTEN_REJECT: m({
-      text: { value: _(`${TBT[topic]}|SR|.*|someSubscription+`) },
+      text: { value: _(`${TBT[topic]}|LR|.*|someSubscription+`) },
       message: {
         topic,
-        action: actions.SUBSCRIPTION_FOR_PATTERN_REMOVED.BYTE,
+        action: actions.LISTEN_REJECT.BYTE,
         name: '.*',
         subscription: 'someSubscription',
       },
+      urp: {
+        value: binMsg(
+          topic,
+          actions.LISTEN_REJECT.BYTE,
+          { n: '.*', s: 'someSubscription' },
+          ''
+        )
+      }
     }),
   })
 }
 
-export const PARSER_MESSAGES = {
-  UNKNOWN_TOPIC: {
-    text: { value: _('X|F|UNKNOWN_TOPIC|topic+') },
+export const PARSER_MESSAGES: { [key: string]: MessageSpec } = {
+  UNKNOWN_TOPIC: m({
+    text: { value: _('X|E|UNKNOWN_TOPIC|topic+') },
     message: {
       topic: TOPIC.PARSER.BYTE,
       action: XA.UNKNOWN_TOPIC.BYTE,
-      data: 'topic',
+      reason: 'topic',
+      isError: true
     },
-  },
-  UNKNOWN_ACTION: {
+    urp: { value: binMsg(TOPIC.PARSER.BYTE, XA.UNKNOWN_TOPIC.BYTE, { r: 'topic' }, '') }
+  }),
+  UNKNOWN_ACTION: m({
     text: { value: _('X|E|UNKNOWN_ACTION|action+') },
     message: {
       topic: TOPIC.PARSER.BYTE,
-      action: XA.UNKNOWN_TOPIC.BYTE,
-      data: 'action',
+      action: XA.UNKNOWN_ACTION.BYTE,
+      reason: 'action',
+      isError: true
     },
-  },
-  INVALID_MESSAGE: {
-    text: { parse: false, value: _('X|E|INVALID_MESSAGE|action+') },
+    urp: { value: binMsg(TOPIC.PARSER.BYTE, XA.UNKNOWN_ACTION.BYTE, { r: 'action' }, '') }
+  }),
+  INVALID_MESSAGE: m({
+    text: { parse: false, value: _('X|E|INVALID_MESSAGE|too long+') },
     message: {
       topic: TOPIC.PARSER.BYTE,
       action: XA.INVALID_MESSAGE.BYTE,
-      data: 'action',
+      reason: 'too long',
+      isError: true
     },
-  },
-  MESSAGE_PARSE_ERROR: {
+    urp: { value: binMsg(TOPIC.PARSER.BYTE, XA.INVALID_MESSAGE.BYTE, { r: 'too long' }, '') }
+  }),
+  MESSAGE_PARSE_ERROR: m({
     text: { parse: false, value: _('X|E|MESSAGE_PARSE_ERROR+') },
     message: {
       topic: TOPIC.PARSER.BYTE,
       action: XA.MESSAGE_PARSE_ERROR.BYTE,
+      isError: true
     },
-  },
-  MAXIMUM_MESSAGE_SIZE_EXCEEDED: {
+    urp: { value: binMsg(TOPIC.PARSER.BYTE, XA.MESSAGE_PARSE_ERROR.BYTE, '', '') }
+  }),
+  MAXIMUM_MESSAGE_SIZE_EXCEEDED: m({
     text: { parse: false, value: _('X|E|MAXIMUM_MESSAGE_SIZE_EXCEEDED+') },
     message: {
       topic: TOPIC.PARSER.BYTE,
       action: XA.MAXIMUM_MESSAGE_SIZE_EXCEEDED.BYTE,
+      isError: true
     },
-  },
+    urp: { value: binMsg(TOPIC.PARSER.BYTE, XA.MAXIMUM_MESSAGE_SIZE_EXCEEDED.BYTE, '', '') }
+  })
 }
 
 interface MessageSpec {
   text: {
     value: string
     build: boolean
-    parse: boolean,
+    parse: boolean
   }
   message: Message
-  args: Array<{ type: string, name: string }>
+  urp: {
+    value: Buffer
+  }
+  args?: Array<any>
 }
 
-export const CONNECTION_MESSAGES: {[key: string]: MessageSpec} = {
+export const CONNECTION_MESSAGES: {[key: string]: MessageSpec | null} = {
   PING: m({
     text: { value: _('C|PI+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
-      action: CA.PING.BYTE,
+      action: CA.PING.BYTE
     },
     urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.PING.BYTE, '', '') },
-    args: [],
+    args: []
   }),
   PONG: m({
     text: { parse: false, value: _('C|PO+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
-      action: CA.PONG.BYTE,
+      action: CA.PONG.BYTE
     },
     urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.PONG.BYTE, '', '') },
     args: [],
@@ -365,6 +506,7 @@ export const CONNECTION_MESSAGES: {[key: string]: MessageSpec} = {
     urp: { value: binMsg(TOPIC.CONNECTION.BYTE, CA.REDIRECT.BYTE, { u: 'ws://url.io' }, '') },
     args: [{ type: 'String', name: 'url' }],
   }),
+  ERROR: null,
   CONNECTION_AUTHENTICATION_TIMEOUT: m({
     text: { parse: false, value: _('C|E|CONNECTION_AUTHENTICATION_TIMEOUT+') },
     message: {
@@ -375,7 +517,7 @@ export const CONNECTION_MESSAGES: {[key: string]: MessageSpec} = {
   }),
 }
 
-export const AUTH_MESSAGES = {
+export const AUTH_MESSAGES: {[key: string]: MessageSpec | null} = {
   REQUEST: m({
     text: { value: _('A|REQ|{"username":"ricardo"}+') },
     message: {
@@ -411,6 +553,9 @@ export const AUTH_MESSAGES = {
     },
     urp: { value: binMsg(TOPIC.AUTH.BYTE, AA.TOO_MANY_AUTH_ATTEMPTS.BYTE, '', '') },
   }),
+  MESSAGE_PERMISSION_ERROR: null,
+  MESSAGE_DENIED: null,
+  ERROR: null,
   INVALID_MESSAGE_DATA: m({
     text: {
       parse: false,
@@ -427,7 +572,7 @@ export const AUTH_MESSAGES = {
   }),
 }
 
-export const RECORD_MESSAGES = {
+export const RECORD_MESSAGES: {[key: string]: MessageSpec | null} = {
   HEAD: m({
     text: { value: _('R|HD|user/someId+') },
     message: {
@@ -438,7 +583,7 @@ export const RECORD_MESSAGES = {
     urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.HEAD.BYTE, { n: 'user/someId' }, '') },
   }),
   HEAD_RESPONSE: m({
-    text: { parse: false, value: _('R|HD|user/someId|12|null+') },
+    text: { parse: false, value: _('R|HD|user/someId|12+') },
     message: {
       topic: TOPIC.RECORD.BYTE,
       action: RA.HEAD_RESPONSE.BYTE,
@@ -687,27 +832,27 @@ export const RECORD_MESSAGES = {
     },
     urp: { value: binMsg(TOPIC.RECORD.BYTE, RA.STORAGE_RETRIEVAL_TIMEOUT.BYTE, { n: 'recordName' }, '') },
   }),
-  RECORD_LOAD_ERROR: {},
-  RECORD_CREATE_ERROR: {},
-  RECORD_UPDATE_ERROR: {},
-  RECORD_DELETE_ERROR: {},
-  RECORD_READ_ERROR: {},
-  RECORD_NOT_FOUND: {},
-  INVALID_VERSION: {},
-  INVALID_PATCH_ON_HOTPATH: {},
-  CREATE: {},
-  SUBSCRIBEANDHEAD: {},
-  SUBSCRIBEANDREAD: {},
-  SUBSCRIBECREATEANDUPDATE: {},
-  HAS: {},
-  HAS_RESPONSE: {},
+  RECORD_LOAD_ERROR: null,
+  RECORD_CREATE_ERROR: null,
+  RECORD_UPDATE_ERROR: null,
+  RECORD_DELETE_ERROR: null,
+  RECORD_READ_ERROR: null,
+  RECORD_NOT_FOUND: null,
+  INVALID_VERSION: null,
+  INVALID_PATCH_ON_HOTPATH: null,
+  CREATE: null,
+  SUBSCRIBEANDHEAD: null,
+  SUBSCRIBEANDREAD: null,
+  SUBSCRIBECREATEANDUPDATE: null,
+  HAS: null,
+  HAS_RESPONSE: null,
 }
 extendWithGenericMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 extendWithPermissionErrorMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 extendWithSubscriptionMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 extendWithListenMessages(TOPIC.RECORD.BYTE, RA, RECORD_MESSAGES)
 
-export const RPC_MESSAGES = {
+export const RPC_MESSAGES: { [key: string]: MessageSpec | null } = {
   REQUEST_ERROR: m({
     text: { value: _('P|E|ERROR_MESSAGE|addValues|1234+') },
     message: {
@@ -717,6 +862,14 @@ export const RPC_MESSAGES = {
       correlationId: '1234',
       reason: 'ERROR_MESSAGE',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.REQUEST_ERROR.BYTE,
+        { n: 'addValues', c: '1234', r: 'ERROR_MESSAGE' },
+        ''
+      )
+    }
   }),
   REQUEST: m({
     text: { value: _('P|REQ|addValues|1234|O{"val1":1,"val2":2}+') },
@@ -727,6 +880,14 @@ export const RPC_MESSAGES = {
       correlationId: '1234',
       parsedData: { val1: 1, val2: 2 },
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.REQUEST.BYTE,
+        { n: 'addValues', c: '1234' },
+        { val1: 1, val2: 2 }
+      )
+    }
   }),
   ACCEPT: m({
     text: { value: _('P|A|REQ|addValues|1234+') },
@@ -736,6 +897,14 @@ export const RPC_MESSAGES = {
       name: 'addValues',
       correlationId: '1234',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.ACCEPT.BYTE,
+        { n: 'addValues', c: '1234' },
+        ''
+      )
+    }
   }),
   REJECT: m({
     text: { value: _('P|REJ|addValues|1234+') },
@@ -745,6 +914,14 @@ export const RPC_MESSAGES = {
       name: 'addValues',
       correlationId: '1234',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.REJECT.BYTE,
+        { n: 'addValues', c: '1234' },
+        ''
+      )
+    }
   }),
   RESPONSE: m({
     text: { value: _('P|RES|addValues|1234|O{"val1":1,"val2":2}+') },
@@ -755,6 +932,14 @@ export const RPC_MESSAGES = {
       correlationId: '1234',
       parsedData: { val1: 1, val2: 2 },
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.RESPONSE.BYTE,
+        { n: 'addValues', c: '1234' },
+        { val1: 1, val2: 2 }
+      )
+    }
   }),
   PROVIDE: m({
     text: { value: _('P|S|addValues+') },
@@ -763,6 +948,14 @@ export const RPC_MESSAGES = {
       action: PA.PROVIDE.BYTE,
       name: 'addValues',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.PROVIDE.BYTE,
+        { n: 'addValues' },
+        ''
+      )
+    }
   }),
   PROVIDE_ACK: m({
     text: { value: _('P|A|S|addValues+') },
@@ -772,6 +965,14 @@ export const RPC_MESSAGES = {
       action: PA.PROVIDE.BYTE,
       name: 'addValues',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.PROVIDE_ACK.BYTE,
+        { n: 'addValues' },
+        ''
+      )
+    }
   }),
   UNPROVIDE: m({
     text: { value: _('P|US|addValues+') },
@@ -780,6 +981,14 @@ export const RPC_MESSAGES = {
       action: PA.UNPROVIDE.BYTE,
       name: 'addValues',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.UNPROVIDE.BYTE,
+        { n: 'addValues' },
+        ''
+      )
+    }
   }),
   UNPROVIDE_ACK: m({
     text: { value: _('P|A|US|addValues+') },
@@ -789,17 +998,33 @@ export const RPC_MESSAGES = {
       action: PA.UNPROVIDE.BYTE,
       name: 'addValues',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.UNPROVIDE_ACK.BYTE,
+        { n: 'addValues' },
+        ''
+      )
+    }
   }),
-  MULTIPLE_PROVIDERS: {},
-  NOT_PROVIDED: {},
+  MULTIPLE_PROVIDERS: null,
+  NOT_PROVIDED: null,
   MULTIPLE_RESPONSE: m({
     text: { parse: false, value: _('P|E|MULTIPLE_RESPONSE|addValues|1234+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.MULTIPLE_RESPONSE.BYTE,
       name: 'addValues',
-      correlationId: 1234,
+      correlationId: '1234',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.MULTIPLE_RESPONSE.BYTE,
+        { n: 'addValues', c: '1234' },
+        ''
+      )
+    }
   }),
   RESPONSE_TIMEOUT: m({
     text: { parse: false, value: _('P|E|RESPONSE_TIMEOUT|addValues|1234+') },
@@ -807,17 +1032,33 @@ export const RPC_MESSAGES = {
       topic: TOPIC.RPC.BYTE,
       action: PA.RESPONSE_TIMEOUT.BYTE,
       name: 'addValues',
-      correlationId: 1234,
+      correlationId: '1234',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.RESPONSE_TIMEOUT.BYTE,
+        { n: 'addValues', c: '1234' },
+        ''
+      )
+    }
   }),
   INVALID_RPC_CORRELATION_ID: m({
-    text: { parse: false, value: _('P|E|INVALID_RPC_CORRELATION_ID|addValues|1234+') },
+    text: { parse: false, value: _('P|E|INVALID_RPC_CORRELATION_ID|addValues|/=/=/=/+') },
     message: {
       topic: TOPIC.RPC.BYTE,
       action: PA.INVALID_RPC_CORRELATION_ID.BYTE,
       name: 'addValues',
-      correlationId: 1234,
+      correlationId: '/=/=/=/',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.INVALID_RPC_CORRELATION_ID.BYTE,
+        { n: 'addValues', c: '/=/=/=/' },
+        ''
+      )
+    }
   }),
   MULTIPLE_ACCEPT: m({
     text: { parse: false, value: _('P|E|MULTIPLE_ACCEPT|addValues|1234+') },
@@ -825,8 +1066,16 @@ export const RPC_MESSAGES = {
       topic: TOPIC.RPC.BYTE,
       action: PA.MULTIPLE_ACCEPT.BYTE,
       name: 'addValues',
-      correlationId: 1234,
+      correlationId: '1234',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.MULTIPLE_ACCEPT.BYTE,
+        { n: 'addValues', c: '1234' },
+        ''
+      )
+    }
   }),
   ACCEPT_TIMEOUT: m({
     text: { parse: false, value: _('P|E|ACCEPT_TIMEOUT|addValues|1234+') },
@@ -834,8 +1083,16 @@ export const RPC_MESSAGES = {
       topic: TOPIC.RPC.BYTE,
       action: PA.ACCEPT_TIMEOUT.BYTE,
       name: 'addValues',
-      correlationId: 1234,
+      correlationId: '1234',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.ACCEPT_TIMEOUT.BYTE,
+        { n: 'addValues', c: '1234' },
+        ''
+      )
+    }
   }),
   NO_RPC_PROVIDER: m({
     text: { parse: false, value: _('P|E|NO_RPC_PROVIDER|addValues|1234+') },
@@ -843,14 +1100,22 @@ export const RPC_MESSAGES = {
       topic: TOPIC.RPC.BYTE,
       action: PA.NO_RPC_PROVIDER.BYTE,
       name: 'addValues',
-      correlationId: 1234,
+      correlationId: '1234',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.RPC.BYTE,
+        PA.NO_RPC_PROVIDER.BYTE,
+        { n: 'addValues', c: '1234' },
+        ''
+      )
+    }
   }),
 }
 extendWithGenericMessages(TOPIC.RPC.BYTE, PA, RPC_MESSAGES)
 extendWithPermissionErrorMessages(TOPIC.RPC.BYTE, PA, RPC_MESSAGES)
 
-export const EVENT_MESSAGES = {
+export const EVENT_MESSAGES: { [key: string]: MessageSpec } = {
   EMIT: m({
     text: { value: _('E|EVT|someEvent|Sdata+') },
     message: {
@@ -859,16 +1124,16 @@ export const EVENT_MESSAGES = {
       name: 'someEvent',
       parsedData: 'data',
     },
-    urp: { value: binMsg(TOPIC.EVENT.BYTE, EA.EMIT.BYTE, { n: 'someEvent' }, '"data"') },
-  }),
+    urp: { value: binMsg(TOPIC.EVENT.BYTE, EA.EMIT.BYTE, { n: 'someEvent' }, '"data"') }
+  })
 }
 extendWithGenericMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 extendWithPermissionErrorMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 extendWithSubscriptionMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 extendWithListenMessages(TOPIC.EVENT.BYTE, EA, EVENT_MESSAGES)
 
-export const PRESENCE_MESSAGES = {
-   SUBSCRIBE: m({
+export const PRESENCE_MESSAGES: {[key: string]: MessageSpec | null} = {
+  SUBSCRIBE: m({
     text: { value: _('U|S|1234|["alan","john"]+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
@@ -876,6 +1141,14 @@ export const PRESENCE_MESSAGES = {
       correlationId: '1234',
       parsedData: ['alan', 'john'],
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.SUBSCRIBE.BYTE,
+        { c: '1234' },
+        ['alan', 'john']
+      )
+    }
   }),
   SUBSCRIBE_ACK: m({
     text: { parse: false, value: _('U|A|S|alan+') },
@@ -885,6 +1158,14 @@ export const PRESENCE_MESSAGES = {
       action: UA.SUBSCRIBE.BYTE,
       name: 'alan',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.SUBSCRIBE_ACK.BYTE,
+        { n: 'alan' },
+        ''
+      )
+    }
   }),
   UNSUBSCRIBE: m({
     text: { value: _('U|US|1234|["alan","john"]+') },
@@ -894,6 +1175,14 @@ export const PRESENCE_MESSAGES = {
       correlationId: '1234',
       parsedData: ['alan', 'john'],
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.UNSUBSCRIBE.BYTE,
+        { c: '1234' },
+        ['alan', 'john']
+      )
+    }
   }),
   UNSUBSCRIBE_ACK: m({
     text: { parse: false, value: _('U|A|US|alan+') },
@@ -903,15 +1192,31 @@ export const PRESENCE_MESSAGES = {
       action: UA.UNSUBSCRIBE.BYTE,
       name: 'alan',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.UNSUBSCRIBE_ACK.BYTE,
+        { n: 'alan' },
+        ''
+      )
+    }
   }),
-  MULTIPLE_SUBSCRIPTIONS: {},
-  NOT_SUBSCRIBED: {},
+  MULTIPLE_SUBSCRIPTIONS: null,
+  NOT_SUBSCRIBED: null,
   QUERY_ALL: m({
     text: { value: _('U|Q|Q+') },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.QUERY_ALL.BYTE,
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.QUERY_ALL.BYTE,
+        '',
+        ''
+      )
+    }
   }),
   QUERY_ALL_RESPONSE: m({
     text: { parse: false, value: _('U|Q|alan|sarah+') },
@@ -920,6 +1225,14 @@ export const PRESENCE_MESSAGES = {
       action: UA.QUERY_ALL_RESPONSE.BYTE,
       parsedData: ['alan', 'sarah'],
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.QUERY_ALL_RESPONSE.BYTE,
+        '',
+        ['alan', 'sarah']
+      )
+    }
   }),
   QUERY: m({
     text: { value: _('U|Q|1234|["alan"]+') },
@@ -929,6 +1242,14 @@ export const PRESENCE_MESSAGES = {
       correlationId: '1234',
       parsedData: ['alan'],
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.QUERY.BYTE,
+        { c: '1234' },
+        ['alan']
+      )
+    }
   }),
   QUERY_RESPONSE: m({
     text: { parse: false, value: _('U|Q|1234|{"alan":true}+') },
@@ -938,6 +1259,14 @@ export const PRESENCE_MESSAGES = {
       correlationId: '1234',
       parsedData: { alan: true },
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.QUERY_RESPONSE.BYTE,
+        { c: '1234' },
+        { alan: true }
+      )
+    }
   }),
   PRESENCE_JOIN: m({
     text: { parse: false, value: _('U|PNJ|username+') },
@@ -946,6 +1275,14 @@ export const PRESENCE_MESSAGES = {
       action: UA.PRESENCE_JOIN.BYTE,
       name: 'username',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.PRESENCE_JOIN.BYTE,
+        { n: 'username' },
+        ''
+      )
+    }
   }),
   PRESENCE_LEAVE: m({
     text: { parse: false, value: _('U|PNL|username+') },
@@ -954,23 +1291,39 @@ export const PRESENCE_MESSAGES = {
       action: UA.PRESENCE_LEAVE.BYTE,
       name: 'username',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.PRESENCE_LEAVE.BYTE,
+        { n: 'username' },
+        ''
+      )
+    }
   }),
   INVALID_PRESENCE_USERS: m({
     text: {
       parse: false,
-      value: _('U|E|INVALID_PRESENCE_USERS|data+'),
+      value: _('U|E|INVALID_PRESENCE_USERS|reason+'),
     },
     message: {
       topic: TOPIC.PRESENCE.BYTE,
       action: UA.INVALID_PRESENCE_USERS.BYTE,
-      data: 'data',
+      reason: 'reason',
     },
+    urp: {
+      value: binMsg(
+        TOPIC.PRESENCE.BYTE,
+        UA.INVALID_PRESENCE_USERS.BYTE,
+        { r: 'reason' },
+        ''
+      )
+    }
   }),
 }
 extendWithGenericMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
 extendWithPermissionErrorMessages(TOPIC.PRESENCE.BYTE, UA, PRESENCE_MESSAGES)
 
-export const MESSAGES: {[key: number]: {}} = {
+export const MESSAGES: {[key: number]: {[key: string]: MessageSpec | null}} = {
   [TOPIC.PARSER.BYTE]: PARSER_MESSAGES,
   [TOPIC.RECORD.BYTE]: RECORD_MESSAGES,
   [TOPIC.RPC.BYTE]: RPC_MESSAGES,
