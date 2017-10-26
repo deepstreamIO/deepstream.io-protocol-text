@@ -294,6 +294,10 @@ export function parseData (message: Message): true | Error {
     return true
   }
 
+  if (typeof message.data !== 'string') {
+    throw new Error('tried to parse binary data with string parser')
+  }
+
   if (ABP[message.topic][message.action] === PAYLOAD_ENCODING.DEEPSTREAM) {
     const parsedData = convertTyped(message.data)
     if (parsedData instanceof Error) {

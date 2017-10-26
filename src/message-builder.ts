@@ -173,7 +173,7 @@ const BUILDERS = {
  * Creates a deepstream message string, based on the
  * provided parameters
  */
-export const getMessage = (message, isAck: boolean): string => {
+export function getMessage (message, isAck: boolean): string {
   if (!BUILDERS[message.topic] || !BUILDERS[message.topic][message.action]) {
     console.log(message, isAck)
   }
@@ -202,7 +202,7 @@ export const getMessage = (message, isAck: boolean): string => {
  * Creates a deepstream error message string based on the provided
  * arguments
  */
-export const getErrorMessage = function (message, errorAction, errorMessage) {
+export function getErrorMessage (message, errorAction, errorMessage) {
   if (!BUILDERS[message.topic] || !BUILDERS[message.topic][errorAction]) {
     // console.trace(message, errorAction, errorMessage)
   }
@@ -223,7 +223,7 @@ export const getErrorMessage = function (message, errorAction, errorMessage) {
  *
  * Please see messageParser.convertTyped for the counterpart of this method
  */
-export const typed = function (value): string {
+export function typed (value): string {
   const type = typeof value
 
   if (type === 'string') {
