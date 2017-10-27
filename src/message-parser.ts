@@ -225,6 +225,9 @@ export const parse = rawMessage => {
         } else if (rawAction === 'TOO_MANY_AUTH_ATTEMPTS') {
           isError = false
           action = AA.TOO_MANY_AUTH_ATTEMPTS.BYTE
+        } else if (rawAction === 'ALREADY_AUTHENTICATED') {
+          isError = false
+          action = AA.ALREADY_AUTHENTICATED.BYTE
         }
       }
       if (action === AA.AUTH_SUCCESSFUL.BYTE) {

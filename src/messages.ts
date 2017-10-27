@@ -358,6 +358,13 @@ export const AUTH_MESSAGES = {
       data: '[invalid',
     },
   }),
+  ALREADY_AUTHENTICATED: m({
+    text: { value: _('A|E|ALREADY_AUTHENTICATED+') },
+    message: {
+      topic: TOPIC.AUTH.BYTE,
+      action: AA.ALREADY_AUTHENTICATED.BYTE,
+    },
+  }),
 }
 
 export const RECORD_MESSAGES = {
