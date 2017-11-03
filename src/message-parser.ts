@@ -265,7 +265,7 @@ export const parseData = message => {
   }
 
   if (ABP[message.topic][message.action] === PAYLOAD_ENCODING.DEEPSTREAM) {
-    const parsedData = convertTyped(message.data)
+    const parsedData = convertTyped(message.data as string)
     if (parsedData instanceof Error) {
       return parsedData
     }
