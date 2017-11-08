@@ -245,6 +245,7 @@ export const PARSER_MESSAGES = {
       action: XA.MAXIMUM_MESSAGE_SIZE_EXCEEDED.BYTE,
     },
   },
+  ERROR: {},
 }
 
 export const CONNECTION_MESSAGES = {
@@ -284,7 +285,7 @@ export const CONNECTION_MESSAGES = {
       action: CA.ACCEPT.BYTE,
     },
   }),
-  REJECTION: m({
+  REJECT: m({
     text: { value: _('C|REJ|reason+') },
     message: {
       topic: TOPIC.CONNECTION.BYTE,
@@ -300,7 +301,6 @@ export const CONNECTION_MESSAGES = {
       data: 'url',
     },
   }),
-  ERROR: {},
   CONNECTION_AUTHENTICATION_TIMEOUT: m({
     text: { parse: false, value: _('C|E|CONNECTION_AUTHENTICATION_TIMEOUT+') },
     message: {
@@ -308,6 +308,11 @@ export const CONNECTION_MESSAGES = {
       action: CA.CONNECTION_AUTHENTICATION_TIMEOUT.BYTE,
     },
   }),
+  ERROR: {},
+  CLOSING: {},
+  CLOSED: {},
+  INVALID_MESSAGE: {},
+  AUTHENTICATION_TIMEOUT: {},
 }
 
 export const AUTH_MESSAGES = {
@@ -358,6 +363,7 @@ export const AUTH_MESSAGES = {
       data: '[invalid',
     },
   }),
+  INVALID_MESSAGE: {},
 }
 
 export const RECORD_MESSAGES = {
@@ -812,6 +818,10 @@ export const PRESENCE_MESSAGES = {
       name: 'alan',
     },
   }),
+  SUBSCRIBE_ALL: {},
+  SUBSCRIBE_ALL_ACK: {},
+  UNSUBSCRIBE_ALL: {},
+  UNSUBSCRIBE_ALL_ACK: {},
   MULTIPLE_SUBSCRIPTIONS: {},
   NOT_SUBSCRIBED: {},
   QUERY_ALL: m({
