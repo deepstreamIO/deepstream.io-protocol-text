@@ -231,6 +231,7 @@ export const PARSER_MESSAGES = {
       data: 'action',
     },
   },
+  INVALID_META_PARAMS: {},
   MESSAGE_PARSE_ERROR: {
     text: { parse: false, value: _('X|E|MESSAGE_PARSE_ERROR+') },
     message: {
@@ -865,6 +866,7 @@ export const PRESENCE_MESSAGES = {
       name: 'username',
     },
   }),
+  PRESENCE_JOIN_ALL: {},
   PRESENCE_LEAVE: m({
     text: { parse: false, value: _('U|PNL|username+') },
     message: {
@@ -873,6 +875,7 @@ export const PRESENCE_MESSAGES = {
       name: 'username',
     },
   }),
+  PRESENCE_LEAVE_ALL: {},
   INVALID_PRESENCE_USERS: m({
     text: {
       parse: false,
