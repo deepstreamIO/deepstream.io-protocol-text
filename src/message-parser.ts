@@ -209,7 +209,7 @@ export const parse = rawMessage => {
       if (isAck) {
         action = CA.ACCEPT.BYTE
         isAck = false
-      } else if (action === CA.CHALLENGE_RESPONSE.BYTE || action === CA.REDIRECT.BYTE || action === CA.REJECTION.BYTE) {
+      } else if (action === CA.REDIRECT.BYTE || action === CA.REJECTION.BYTE) {
         data = parts[index++]
       }
     } else if (topic === TOPIC.AUTH.BYTE) {
@@ -235,7 +235,7 @@ export const parse = rawMessage => {
       }
     }
 
-    parsedMessages.push(JSON.parse(JSON.stringify({
+    let message = JSON.parse(JSON.stringify({
       isAck,
       isError,
       topic,
@@ -254,7 +254,11 @@ export const parse = rawMessage => {
       version,
       // parsedData: null,
       isWriteAck,
-    })))
+    }))
+
+    parseData(message)
+
+    parsedMessages.push(message)
   }
   return parsedMessages
 }
@@ -322,3 +326,5 @@ export const convertTyped = (value: string): any => {
 
   return new Error('Unknown type')
 }
+
+export const isError = (message: any) => false

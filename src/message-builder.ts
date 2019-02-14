@@ -39,7 +39,6 @@ const BUILDERS = {
   [TOPIC.CONNECTION.BYTE]: {
     [CA.ERROR.BYTE]: genericError,
     [CA.CHALLENGE.BYTE]: msg => `C${y}CH${x}`,
-    [CA.CHALLENGE_RESPONSE.BYTE]: msg => `C${y}CHR${y}${msg.data}${x}`,
     [CA.ACCEPT.BYTE]: msg => `C${y}A${x}`,
     [CA.REJECTION.BYTE]: msg => `C${y}REJ${y}${msg.data}${x}`,
     [CA.REDIRECT.BYTE]: msg => `C${y}RED${y}${msg.data}${x}`,
@@ -114,9 +113,6 @@ const BUILDERS = {
     [RA.MESSAGE_PERMISSION_ERROR.BYTE]: messagePermissionError,
     [RA.NOT_SUBSCRIBED.BYTE]: notSubscribed,
     [RA.MULTIPLE_SUBSCRIPTIONS.BYTE]: multipleSubscriptions,
-
-    [RA.HAS.BYTE]: msg => `R${y}H${y}${msg.name}${x}`,
-    [RA.HAS_RESPONSE.BYTE]: msg => `R${y}H${y}${msg.name}${y}${msg.parsedData ? 'T' : 'F' }${x}`,
   },
   [TOPIC.RPC.BYTE]: {
     [PA.ERROR.BYTE]: genericError,
@@ -153,7 +149,6 @@ const BUILDERS = {
 
     [UA.INVALID_PRESENCE_USERS.BYTE]: msg => `U${y}E${y}INVALID_PRESENCE_USERS${y}${msg.data}${x}`,
 
-    [UA.INVALID_MESSAGE_DATA.BYTE]: invalidMessageData,
     [UA.MESSAGE_DENIED.BYTE]: messageDenied,
     [UA.MESSAGE_PERMISSION_ERROR.BYTE]: messagePermissionError,
     [UA.NOT_SUBSCRIBED.BYTE]: notSubscribed,
@@ -171,7 +166,7 @@ export const getMessage = (message, isAck): string => {
   }
   const builder = BUILDERS[message.topic][message.action]
   if (!builder) {
-    console.error('missing builder for', message)
+    console.trace('missing builder for', message)
     return ''
   } else {
     if (
